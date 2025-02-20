@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Bet_Oven.Data;
 using SportDomain.models;
+using SportRepository;
 
 namespace Bet_Oven.Controllers
 {
