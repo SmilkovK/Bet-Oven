@@ -76,10 +76,10 @@ namespace Bet_Oven.Areas.Identity.Pages.Account
             [Required]
             [DataType(DataType.Password)]
             public string Password { get; set; }
-            [Required]
+            /*[Required]
             public string Name { get; set; }
             [Required]
-            public DateOnly Date {  get; set; }
+            public DateOnly Date {  get; set; }*/
 
             /// <summary>
             ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
