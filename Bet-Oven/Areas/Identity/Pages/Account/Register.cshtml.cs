@@ -101,6 +101,7 @@ namespace Bet_Oven.Areas.Identity.Pages.Account
             [Required]
             public string Name {  get; set; }
             [Required]
+            [AgeCheck(18)]
             public DateOnly Date {  get; set; }
         }
 
