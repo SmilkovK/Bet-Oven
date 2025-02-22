@@ -12,8 +12,8 @@ using SportRepository;
 namespace Bet_Oven.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250220123740_test")]
-    partial class test
+    [Migration("20250222170658_final")]
+    partial class final
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -174,8 +174,8 @@ namespace Bet_Oven.Data.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateOnly>("Date")
-                        .HasColumnType("date");
+                    b.Property<DateTime>("DateOfBirth")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Email")
                         .HasMaxLength(256)
@@ -189,9 +189,6 @@ namespace Bet_Oven.Data.Migrations
 
                     b.Property<DateTimeOffset?>("LockoutEnd")
                         .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("Name")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("NormalizedEmail")
                         .HasMaxLength(256)
@@ -211,6 +208,9 @@ namespace Bet_Oven.Data.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("SecurityStamp")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SiteName")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("TwoFactorEnabled")
@@ -233,18 +233,24 @@ namespace Bet_Oven.Data.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
-            modelBuilder.Entity("SportDomain.models.Currency", b =>
+            modelBuilder.Entity("SportDomain.models.VirtualCurrency", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("uniqueidentifier");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    b.Property<string>("BetUserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<float>("currencyAmount")
                         .HasColumnType("real");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("BetUserId");
 
                     b.ToTable("Currencies");
                 });
@@ -298,6 +304,21 @@ namespace Bet_Oven.Data.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("SportDomain.models.VirtualCurrency", b =>
+                {
+                    b.HasOne("SportDomain.Identity.BetUser", "BetUser")
+                        .WithMany("Currencies")
+                        .HasForeignKey("BetUserId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("BetUser");
+                });
+
+            modelBuilder.Entity("SportDomain.Identity.BetUser", b =>
+                {
+                    b.Navigation("Currencies");
                 });
 #pragma warning restore 612, 618
         }

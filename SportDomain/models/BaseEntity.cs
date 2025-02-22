@@ -6,9 +6,8 @@ using System.Threading.Tasks;
 
 namespace SportDomain.models
 {
-    public class Currency
+    public class BaseEntity
     {
-        public float currencyAmount { get; set; }
-
+        public Guid Id { get; set; }
     }
 }

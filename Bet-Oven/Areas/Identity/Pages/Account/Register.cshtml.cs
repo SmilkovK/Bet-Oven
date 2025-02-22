@@ -99,10 +99,10 @@ namespace Bet_Oven.Areas.Identity.Pages.Account
             [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
             public string ConfirmPassword { get; set; }
             [Required]
-            public string Name {  get; set; }
+            public string UserName {  get; set; }
             [Required]
             [AgeCheck(18)]
-            public DateOnly Date {  get; set; }
+            public DateTime DateBDay {  get; set; }
         }
 
 
@@ -123,8 +123,8 @@ namespace Bet_Oven.Areas.Identity.Pages.Account
                 await _userStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
                 await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
 
-                user.Name = Input.Name;
-                user.Date = Input.Date;
+                user.SiteName = Input.UserName;
+                user.DateOfBirth = Input.DateBDay;
 
                 var result = await _userManager.CreateAsync(user, Input.Password);
 

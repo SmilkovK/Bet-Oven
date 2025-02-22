@@ -10,11 +10,21 @@ namespace SportRepository
 
     public class ApplicationDbContext : IdentityDbContext<BetUser>
     {
-        public virtual DbSet<Currency> Currencies { get; set; }
+        public virtual DbSet<VirtualCurrency> Currencies { get; set; }
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
         {
 
+        }
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<BetUser>()
+                .HasMany(b => b.Currencies)
+                .WithOne(c => c.BetUser)
+                .HasForeignKey(c => c.BetUserId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿@model SportDomain.models.Currency
+﻿@model SportDomain.models.VirtualCurrency
 
 @{
     ViewData["Title"] = "Create";
@@ -6,7 +6,7 @@
 
 <h1>Create</h1>
 
-<h4>Currency</h4>
+<h4>VirtualCurrency</h4>
 <hr />
 <div class="row">
     <div class="col-md-4">
@@ -17,6 +17,15 @@
                 <input asp-for="currencyAmount" class="form-control" />
                 <span asp-validation-for="currencyAmount" class="text-danger"></span>
             </div>
+@*             <div class="form-group">
+                <label asp-for="CreatedAt" class="control-label"></label>
+                <input asp-for="CreatedAt" class="form-control" />
+                <span asp-validation-for="CreatedAt" class="text-danger"></span>
+            </div> *@
+            @* <div class="form-group">
+                <label asp-for="BetUserId" class="control-label"></label>
+                <select asp-for="BetUserId" class ="form-control" asp-items="ViewBag.BetUserId"></select>
+            </div> *@
             <div class="form-group">
                 <input type="submit" value="Create" class="btn btn-primary" />
             </div>
