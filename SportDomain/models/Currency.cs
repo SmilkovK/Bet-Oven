@@ -8,7 +8,6 @@ namespace SportDomain.models
 {
     public class Currency
     {
-        public int Id { get; set; }
         public float currencyAmount { get; set; }
 
     }
