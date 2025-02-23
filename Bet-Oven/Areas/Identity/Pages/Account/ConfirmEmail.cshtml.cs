@@ -4,6 +4,7 @@
 
 using System;
 using System.Linq;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -12,16 +13,19 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
 using SportDomain.Identity;
+using SportRepository;
 
 namespace Bet_Oven.Areas.Identity.Pages.Account
 {
     public class ConfirmEmailModel : PageModel
     {
         private readonly UserManager<BetUser> _userManager;
+        private readonly ApplicationDbContext _context;
 
-        public ConfirmEmailModel(UserManager<BetUser> userManager)
+        public ConfirmEmailModel(UserManager<BetUser> userManager,ApplicationDbContext context)
         {
             _userManager = userManager;
+            _context = context;
         }
 
         /// <summary>
@@ -42,6 +46,12 @@ namespace Bet_Oven.Areas.Identity.Pages.Account
             {
                 return NotFound($"Unable to load user with ID '{userId}'.");
             }
+            userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var totalCurrency = _context.Currencies
+                                     .Where(t => t.BetUserId == userId)
+                                     .Sum(t => t.currencyAmount);
+
+            ViewData["TotalCurrency"] = totalCurrency;
 
             code = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(code));
             var result = await _userManager.ConfirmEmailAsync(user, code);

@@ -4,12 +4,15 @@
 
 using System;
 using System.ComponentModel.DataAnnotations;
+using System.Data.Entity;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
 using SportDomain.Identity;
+using SportRepository;
 
 namespace Bet_Oven.Areas.Identity.Pages.Account.Manage
 {
@@ -18,15 +21,18 @@ namespace Bet_Oven.Areas.Identity.Pages.Account.Manage
         private readonly UserManager<BetUser> _userManager;
         private readonly SignInManager<BetUser> _signInManager;
         private readonly ILogger<ChangePasswordModel> _logger;
+        private readonly ApplicationDbContext _context;
 
         public ChangePasswordModel(
             UserManager<BetUser> userManager,
             SignInManager<BetUser> signInManager,
-            ILogger<ChangePasswordModel> logger)
+            ILogger<ChangePasswordModel> logger,
+            ApplicationDbContext context)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _logger = logger;
+            _context = context;
         }
 
         /// <summary>
@@ -85,6 +91,13 @@ namespace Bet_Oven.Areas.Identity.Pages.Account.Manage
             {
                 return NotFound($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
             }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var totalCurrency = _context.Currencies
+                                     .Where(t => t.BetUserId == userId)
+                                     .Sum(t => t.currencyAmount);
+
+            ViewData["TotalCurrency"] = totalCurrency;
 
             var hasPassword = await _userManager.HasPasswordAsync(user);
             if (!hasPassword)

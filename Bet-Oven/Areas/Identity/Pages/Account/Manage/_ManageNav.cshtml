@@ -1,5 +1,4 @@
 ﻿@using SportDomain.Identity
-@using Microsoft.AspNetCore.Identity
 @inject SignInManager<BetUser> SignInManager
 @{
     var hasExternalLogins = (await SignInManager.GetExternalAuthenticationSchemesAsync()).Any();

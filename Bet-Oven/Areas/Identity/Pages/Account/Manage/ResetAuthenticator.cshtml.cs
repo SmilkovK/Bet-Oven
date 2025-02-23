@@ -14,18 +14,21 @@ using SportRepository;
 
 namespace Bet_Oven.Areas.Identity.Pages.Account.Manage
 {
-    public class Disable2faModel : PageModel
+    public class ResetAuthenticatorModel : PageModel
     {
         private readonly UserManager<BetUser> _userManager;
-        private readonly ILogger<Disable2faModel> _logger;
+        private readonly SignInManager<BetUser> _signInManager;
+        private readonly ILogger<ResetAuthenticatorModel> _logger;
         private readonly ApplicationDbContext _context;
 
-        public Disable2faModel(
+        public ResetAuthenticatorModel(
             UserManager<BetUser> userManager,
-            ILogger<Disable2faModel> logger,
+            SignInManager<BetUser> signInManager,
+            ILogger<ResetAuthenticatorModel> logger,
             ApplicationDbContext context)
         {
             _userManager = userManager;
+            _signInManager = signInManager;
             _logger = logger;
             _context = context;
         }
@@ -43,11 +46,6 @@ namespace Bet_Oven.Areas.Identity.Pages.Account.Manage
             if (user == null)
             {
                 return NotFound($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
-            }
-
-            if (!await _userManager.GetTwoFactorEnabledAsync(user))
-            {
-                throw new InvalidOperationException($"Cannot disable 2FA for user as it's not currently enabled.");
             }
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var totalCurrency = _context.Currencies
@@ -67,15 +65,15 @@ namespace Bet_Oven.Areas.Identity.Pages.Account.Manage
                 return NotFound($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
             }
 
-            var disable2faResult = await _userManager.SetTwoFactorEnabledAsync(user, false);
-            if (!disable2faResult.Succeeded)
-            {
-                throw new InvalidOperationException($"Unexpected error occurred disabling 2FA.");
-            }
+            await _userManager.SetTwoFactorEnabledAsync(user, false);
+            await _userManager.ResetAuthenticatorKeyAsync(user);
+            var userId = await _userManager.GetUserIdAsync(user);
+            _logger.LogInformation("User with ID '{UserId}' has reset their authentication app key.", user.Id);
 
-            _logger.LogInformation("User with ID '{UserId}' has disabled 2fa.", _userManager.GetUserId(User));
-            StatusMessage = "2fa has been disabled. You can reenable 2fa when you setup an authenticator app";
-            return RedirectToPage("./TwoFactorAuthentication");
+            await _signInManager.RefreshSignInAsync(user);
+            StatusMessage = "Your authenticator app key has been reset, you will need to configure your authenticator app using the new key.";
+
+            return RedirectToPage("./EnableAuthenticator");
         }
     }
 }

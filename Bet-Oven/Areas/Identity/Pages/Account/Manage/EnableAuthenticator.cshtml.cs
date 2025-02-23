@@ -6,6 +6,7 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.Linq;
+using System.Security.Claims;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
@@ -14,6 +15,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
 using SportDomain.Identity;
+using SportRepository;
 
 namespace Bet_Oven.Areas.Identity.Pages.Account.Manage
 {
@@ -22,17 +24,20 @@ namespace Bet_Oven.Areas.Identity.Pages.Account.Manage
         private readonly UserManager<BetUser> _userManager;
         private readonly ILogger<EnableAuthenticatorModel> _logger;
         private readonly UrlEncoder _urlEncoder;
+        private readonly ApplicationDbContext _context;
 
         private const string AuthenticatorUriFormat = "otpauth://totp/{0}:{1}?secret={2}&issuer={0}&digits=6";
 
         public EnableAuthenticatorModel(
             UserManager<BetUser> userManager,
             ILogger<EnableAuthenticatorModel> logger,
-            UrlEncoder urlEncoder)
+            UrlEncoder urlEncoder,
+            ApplicationDbContext context)
         {
             _userManager = userManager;
             _logger = logger;
             _urlEncoder = urlEncoder;
+            _context = context;
         }
 
         /// <summary>
@@ -92,6 +97,13 @@ namespace Bet_Oven.Areas.Identity.Pages.Account.Manage
             {
                 return NotFound($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
             }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var totalCurrency = _context.Currencies
+                                     .Where(t => t.BetUserId == userId)
+                                     .Sum(t => t.currencyAmount);
+
+            ViewData["TotalCurrency"] = totalCurrency;
 
             await LoadSharedKeyAndQrCodeUriAsync(user);
 
