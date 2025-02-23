@@ -25,6 +25,15 @@ namespace Bet_Oven.Controllers
         // GET: VirtualCurrencies
         public async Task<IActionResult> Index()
         {
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            
+            var totalCurrency = await _context.Currencies
+                 .Where( t => t.BetUserId == userId)
+                .SumAsync(t => t.currencyAmount);
+
+            ViewBag.TotalCurrency = totalCurrency;
+
             var applicationDbContext = _context.Currencies.Include(v => v.BetUser);
             return View(await applicationDbContext.ToListAsync());
         }
