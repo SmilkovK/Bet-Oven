@@ -1,13 +1,15 @@
-﻿using SportDomain.Identity;
+﻿
+using Microsoft.EntityFrameworkCore;
 using SportRepository.Interface;
+using SportRepository;
 using System;
 using System.Collections.Generic;
-using System.Data.Entity;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using SportDomain.Identity;
 
-namespace SportRepository.Implementation
+namespace EShop.Repository.Implementation
 {
     public class UserRepository : IUserRepository
     {
@@ -24,6 +26,12 @@ namespace SportRepository.Implementation
         {
             return entities.AsEnumerable();
         }
+        public BetUser Get(string id)
+        {
+            return entities
+               .Include(z => z.Currencies)
+               .SingleOrDefault(s => s.Id == id);
+        }
         public void Insert(BetUser entity)
         {
             if (entity == null)
@@ -33,7 +41,6 @@ namespace SportRepository.Implementation
             entities.Add(entity);
             context.SaveChanges();
         }
-
         public void Update(BetUser entity)
         {
             if (entity == null)
@@ -53,5 +60,6 @@ namespace SportRepository.Implementation
             entities.Remove(entity);
             context.SaveChanges();
         }
+
     }
 }

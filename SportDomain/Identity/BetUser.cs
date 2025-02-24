@@ -13,5 +13,6 @@ namespace SportDomain.Identity
         public string? SiteName { get; set; }
         public DateTime DateOfBirth { get; set; }
         public virtual ICollection<VirtualCurrency> Currencies { get; set; } = new List<VirtualCurrency>();
+        public bool HasAcceptedUserAgreement { get; set; }
     }
 }

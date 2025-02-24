@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SportRepository;
-using System.Data.Entity;
 using System.Diagnostics;
 using System.Security.Claims;
 

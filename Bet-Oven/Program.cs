@@ -2,6 +2,7 @@ using SportRepository;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SportDomain.Identity;
+using ProjectName.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,6 +38,8 @@ app.UseRouting();
 
 app.UseAuthorization();
 
+app.UseMiddleware<UserAgreementMiddleware>();
+
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
@@ -62,21 +65,31 @@ using (var scope = app.Services.CreateScope())
     var UserManager = scope.ServiceProvider.GetRequiredService<UserManager<BetUser>>();
 
     string email = "admin@admin.com";
-    string sitename = "the_admin";
+    string sitename = "admin@admin.com";
     string password = "Kai.123";
+    string email2 = "editor@edit";
+    string sitename2 = "editor@edit";
+    string passwrod2 = "Kai.123";
     if (await UserManager.FindByEmailAsync(email) == null)
     {
         var user = new BetUser();
         user.Email = email;
         user.UserName = sitename;
         await UserManager.CreateAsync(user, password);
-
         await UserManager.AddToRoleAsync(user, "Admin");
-    }
-            
-  
-}
 
+    }
+
+    if (await UserManager.FindByEmailAsync(email2) == null)
+    {
+        var user2 = new BetUser();
+        user2.Email = email2;
+        user2.UserName = sitename2;
+        await UserManager.CreateAsync(user2, passwrod2);
+        await UserManager.AddToRoleAsync(user2, "Editor");
+
+    }
+}
 
 
 app.Run();

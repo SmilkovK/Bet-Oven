@@ -96,7 +96,7 @@ namespace Bet_Oven.Controllers
             }
             return View(virtualCurrency);
         }
-        [Authorize(Roles ="Admin")]
+        [Authorize(Roles ="Admin, Editor")]
         // GET: VirtualCurrencies/Edit/5
         public async Task<IActionResult> Edit(Guid? id)
         {
@@ -151,7 +151,7 @@ namespace Bet_Oven.Controllers
         }
 
         // GET: VirtualCurrencies/Delete/5
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin, Editor")]
         public async Task<IActionResult> Delete(Guid? id)
         {
             if (id == null)
