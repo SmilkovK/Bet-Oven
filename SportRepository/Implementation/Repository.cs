@@ -1,37 +1,35 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using SportDomain.models;
 using SportRepository.Interface;
-using SportRepository;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using SportDomain.Identity;
 
 namespace SportRepository.Implementation
 {
-    public class UserRepository : IUserRepository
+    public class Repository<T> : IRepository<T> where T : BaseEntity
     {
         private readonly ApplicationDbContext context;
-        private DbSet<BetUser> entities;
+        private DbSet<T> entities;
         string errorMessage = string.Empty;
 
-        public UserRepository(ApplicationDbContext context)
+        public Repository(ApplicationDbContext context)
         {
             this.context = context;
-            entities = context.Set<BetUser>();
+            entities = context.Set<T>();
         }
-        public IEnumerable<BetUser> GetAll()
+        public IEnumerable<T> GetAll()
         {
             return entities.AsEnumerable();
         }
-        public BetUser Get(string id)
+
+        public T Get(Guid? id)
         {
-            return entities
-               .Include(z => z.Currencies)
-               .SingleOrDefault(s => s.Id == id);
+            return entities.SingleOrDefault(s => s.Id == id);
         }
-        public void Insert(BetUser entity)
+        public void Insert(T entity)
         {
             if (entity == null)
             {
@@ -40,7 +38,8 @@ namespace SportRepository.Implementation
             entities.Add(entity);
             context.SaveChanges();
         }
-        public void Update(BetUser entity)
+
+        public void Update(T entity)
         {
             if (entity == null)
             {
@@ -50,7 +49,7 @@ namespace SportRepository.Implementation
             context.SaveChanges();
         }
 
-        public void Delete(BetUser entity)
+        public void Delete(T entity)
         {
             if (entity == null)
             {
@@ -59,6 +58,5 @@ namespace SportRepository.Implementation
             entities.Remove(entity);
             context.SaveChanges();
         }
-
     }
 }

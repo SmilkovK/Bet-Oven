@@ -23,8 +23,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Interface\" />
-    <Folder Include="Implementation\" />
+    <ProjectReference Include="..\SportDomain\SportDomain.csproj" />
+    <ProjectReference Include="..\SportRepository\SportRepository.csproj" />
   </ItemGroup>
 
 </Project>

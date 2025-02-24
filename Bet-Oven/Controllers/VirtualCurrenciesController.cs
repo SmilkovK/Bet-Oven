@@ -17,6 +17,7 @@ namespace Bet_Oven.Controllers
     public class VirtualCurrenciesController : Controller
     {
         private readonly ApplicationDbContext _context;
+      //private readonly IVirtualCurrencyService _vcurrency;
 
         public VirtualCurrenciesController(ApplicationDbContext context)
         {

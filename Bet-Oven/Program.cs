@@ -3,6 +3,11 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SportDomain.Identity;
 using ProjectName.Middleware;
+using SportRepository.Implementation;
+using SportRepository.Interface;
+using SportService.Interface;
+using SportService.Implementation;
+using SportDomain.models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +21,15 @@ builder.Services.AddDefaultIdentity<BetUser>(options => options.SignIn.RequireCo
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
 builder.Services.AddControllersWithViews();
+
+builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+builder.Services.AddScoped(typeof(IUserRepository), typeof(UserRepository));
+
+builder.Services.AddHttpClient();
+
+builder.Services.AddHttpClient<FootballApiService>();
+
+
 
 var app = builder.Build();
 
