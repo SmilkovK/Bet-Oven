@@ -23,5 +23,25 @@ namespace Bet_Oven.Controllers.API
             var result = await _footballApiService.GetLiveMatches();
             return Ok(result);
         }
+        [HttpGet("leagues")]
+        public async Task<ActionResult<List<AllLeagues>>> GetLeagues()
+        {
+            var leagues = await _footballApiService.GetLeagues();
+            return Ok(leagues);
+        }
+
+        [HttpGet("teams/{leagueId}/{season}")]
+        public async Task<ActionResult<List<TeamInfo>>> GetTeams(int leagueId, int season)
+        {
+            var teams = await _footballApiService.GetTeams(leagueId, season);
+            return Ok(teams);
+        }
+
+        [HttpGet("fixtures/{leagueId}/{season}")]
+        public async Task<ActionResult<List<Fixture>>> GetFixtures(int leagueId, int season)
+        {
+            var fixtures = await _footballApiService.GetFixtures(leagueId, season);
+            return Ok(fixtures);
+        }
     }
 }

@@ -11,7 +11,7 @@
                         <h5 class="card-title text-primary">@match.Date</h5>
                         <div class="d-flex justify-content-around align-items-center">
                             <div>
-                                <img src="https://placehold.co/50x50" class="rounded-circle" alt="Home Team">
+                                <img src="@match.Teams.Home.Logo" class="rounded-circle" width="60" height="60" alt="Home Team">
                                 <h5 class="mt-2 text-dark">@match.Teams.Home.Name</h5>
                             </div>
                             <div>
@@ -20,7 +20,7 @@
                                 <span class="badge bg-danger fs-5">@match.Goals?.Away</span>
                             </div>
                             <div>
-                                <img src="https://placehold.co/50x50" class="rounded-circle" alt="Away Team">
+                                <img src="@match.Teams.Away.Logo" class="rounded-circle" width="60" height="60" alt="Away Team">
                                 <h5 class="mt-2 text-dark">@match.Teams.Away.Name</h5>
                             </div>
                         </div>
