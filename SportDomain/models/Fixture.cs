@@ -12,7 +12,6 @@ namespace SportDomain.models
         public CountryInfo Country { get; set; }
         public List<SeasonInfo> Seasons { get; set; }
     }
-
     public class LeagueInfo
     {
         public int Id { get; set; }
@@ -60,5 +59,36 @@ namespace SportDomain.models
     {
         public int? Home { get; set; }
         public int? Away { get; set; }
+    }
+    public class LeagueResponse
+    {
+        public LeagueStandings League { get; set; }
+    }
+    public class LeagueStandings
+    {
+        public List<List<Standing>> Standings { get; set; }
+    }
+    public class Standing
+    {
+        public int Rank { get; set; }
+        public TeamInfo Team { get; set; }
+        public int Points { get; set; }
+        public int GoalsDiff { get; set; }
+        public AllStats All { get; set; }
+    }
+
+    public class AllStats
+    {
+        public int Played { get; set; }
+        public int Win { get; set; }
+        public int Draw { get; set; }
+        public int Lose { get; set; }
+    }
+    public class StandingsViewModel
+    {
+        public List<Standing> Standings { get; set; }
+        public List<int> AvailableSeasons { get; set; }
+        public int SelectedSeason { get; set; }
+        public int LeagueId { get; set; }
     }
 }

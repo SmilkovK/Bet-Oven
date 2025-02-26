@@ -1,5 +1,6 @@
 ﻿using System.Net.Http;
 using System.Text.Json;
+using System.Linq;
 using System.Threading.Tasks;
 using SportDomain.models;
 
@@ -55,7 +56,6 @@ namespace SportService.Implementation
             return apiResponse?.Response ?? new List<AllLeagues>();
         }
 
-
         public async Task<List<Fixture>> GetLiveMatches()
         {
             var response = await _httpClient.GetAsync($"{BaseUrl}fixtures?live=all");
@@ -70,6 +70,30 @@ namespace SportService.Implementation
 
             return apiResponse?.Response ?? new List<Fixture>();
         }
+        public async Task<List<Standing>> GetStandings(int leagueId, int season)
+        {
+            var response = await _httpClient.GetAsync(
+                $"{BaseUrl}standings?league={leagueId}&season={season}");
+
+            if (!response.IsSuccessStatusCode) return new List<Standing>();
+
+            var json = await response.Content.ReadAsStringAsync();
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+
+            var apiResponse = JsonSerializer.Deserialize<ApiFootballStandingsResponse>(json, options);
+
+            return apiResponse?.Response
+                ?.FirstOrDefault()
+                ?.League
+                ?.Standings
+                ?.FirstOrDefault()
+                ?? new List<Standing>();
+        }
+
+    }
+    public class ApiFootballStandingsResponse
+    {
+        public List<LeagueResponse> Response { get; set; }
     }
     public class ApiFootballLeaguesResponse
     {
