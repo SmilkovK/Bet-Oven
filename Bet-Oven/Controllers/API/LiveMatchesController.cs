@@ -43,5 +43,6 @@ namespace Bet_Oven.Controllers.API
             var fixtures = await _footballApiService.GetFixtures(leagueId, season);
             return Ok(fixtures);
         }
+
     }
 }

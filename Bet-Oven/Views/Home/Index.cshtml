@@ -1,8 +1,102 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
-}
+﻿@model SportDomain.models.LeagueMatchesViewModel
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<h2>Leagues</h2>
+<div id="leagues-container">
+    @if (Model.Leagues != null && Model.Leagues.Any())
+    {
+        <ul class="leagues-list">
+            @foreach (var league in Model.Leagues)
+            {
+                <li class="league-item" onclick="showMatches(@league.League.Id)">
+                    <img src="@league.League.Logo" class="item-logo" width="30" height="30" />
+                    <strong>@league.League.Name</strong> (Type: @league.League.Type)
+                </li>
+                <div id="matches-@league.League.Id" class="matches-container" style="display: none;"></div>
+            }
+        </ul>
+    }
+    else
+    {
+        <p>No leagues available.</p>
+    }
 </div>
+
+<script>
+    function showMatches(leagueId) {
+        let matchContainer = document.getElementById(`matches-${leagueId}`);
+
+        // Toggle visibility
+        if (matchContainer.style.display === "block") {
+            matchContainer.style.display = "none";
+            return;
+        }
+
+        // Hide all other matches
+        document.querySelectorAll(".matches-container").forEach(div => {
+            div.style.display = "none";
+        });
+
+        // Fetch and display matches
+        fetch(`/api/fixtures?league=${leagueId}`)
+            .then(response => response.json())
+            .then(matches => {
+                let matchesHtml = "<h3>Matches</h3><div class='matches-grid'>";
+                matches.slice(0, 5).forEach(match => {
+                    matchesHtml += `
+                        <div class='match-card'>
+                            <div class='teams'>
+                                <img src="${match.teams.home.logo}" width="30"/> ${match.teams.home.name}
+                                vs
+                                <img src="${match.teams.away.logo}" width="30"/> ${match.teams.away.name}
+                            </div>
+                            <div class='odds'>
+                                <strong>Bet365 Odds</strong><br>
+                                Home: ${match.odds?.homeWin || 'N/A'}
+                                Draw: ${match.odds?.draw || 'N/A'}
+                                Away: ${match.odds?.awayWin || 'N/A'}
+                            </div>
+                        </div>`;
+                });
+                matchesHtml += "</div>";
+                matchContainer.innerHTML = matchesHtml;
+                matchContainer.style.display = "block";
+            });
+    }
+</script>
+
+<style>
+    .leagues-list {
+        list-style-type: none;
+        padding: 0;
+        width: auto;
+        align-content: center;
+        text-align: center;
+    }
+
+    .league-item {
+        cursor: pointer;
+        padding: 10px;
+        margin: 5px 0;
+        border: 1px solid #ddd;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .matches-grid {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 10px;
+    }
+
+    .match-card {
+        width: 200px;
+        padding: 10px;
+        border: 1px solid #ddd;
+        text-align: center;
+    }
+    .item-logo{
+        margin-left: 0px;
+    }
+</style>

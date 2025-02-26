@@ -41,6 +41,7 @@ namespace SportDomain.models
         public string Status { get; set; }
         public Teams Teams { get; set; }
         public Goals Goals { get; set; }
+        public Odds Odds { get; set; }
     }
 
     public class Teams
@@ -60,5 +61,12 @@ namespace SportDomain.models
     {
         public int? Home { get; set; }
         public int? Away { get; set; }
+    }
+    public class Odds
+    {
+        public string Bookmakers { get; set; }
+        public double? HomeWin { get; set; }
+        public double? Draw { get; set; }
+        public double? AwayWin { get; set; }
     }
 }

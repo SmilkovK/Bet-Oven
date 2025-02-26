@@ -1,0 +1,14 @@
+﻿@* @model List<SportDomain.models.AllLeagues> *@
+
+@* @foreach (var league in Model) *@
+@* { *@
+@*     <div class="league-container card mb-3" onclick="toggleMatches(@league.LeagueId)"> *@
+@*         <div class="card-body"> *@
+@*             <h5 class="card-title">@league.LeagueName</h5> *@
+@*         </div> *@
+@*     </div> *@
+
+@*     <div id="matches-@league.LeagueId" class="matches-container" style="display: none;"> *@
+@*         @await Html.PartialAsync("_MatchesPartial", league.Fixtures.Take(5).ToList()) *@
+@*     </div> *@
+@* } *@

@@ -52,7 +52,39 @@ namespace SportService.Implementation
             var json = await response.Content.ReadAsStringAsync();
             var apiResponse = JsonSerializer.Deserialize<ApiFootballLeaguesResponse>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-            return apiResponse?.Response ?? new List<AllLeagues>();
+            var leagues = apiResponse?.Response ?? new List<AllLeagues>();
+
+            // Extract league info and current season
+            var formattedLeagues = leagues
+                .Select(l => new AllLeagues
+                {
+                    League = new LeagueInfo
+                    {
+                        Id = l.League.Id,
+                        Name = l.League.Name,
+                        Logo = l.League.Logo,
+                        Type = l.League.Type
+                    },
+                    Country = l.Country,
+                    Seasons = l.Seasons.Where(s => s.Current).ToList() // Only keep current season
+                })
+                .Where(l => l.Seasons.Any()) // Ensure we only return leagues with a current season
+                .ToList();
+
+            return formattedLeagues;
+        }
+
+        public async Task<List<Matches>> GetTodaysFixtures()
+        {
+            string today = DateTime.UtcNow.ToString("yyyy-MM-dd"); // Get today's date in YYYY-MM-DD format
+            var response = await _httpClient.GetAsync($"{BaseUrl}fixtures?date={today}");
+
+            if (!response.IsSuccessStatusCode) return new List<Matches>();
+
+            var json = await response.Content.ReadAsStringAsync();
+            var apiResponse = JsonSerializer.Deserialize<ApiFootballMatchesResponse>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            return apiResponse?.Response ?? new List<Matches>();
         }
 
 
@@ -70,6 +102,22 @@ namespace SportService.Implementation
 
             return apiResponse?.Response ?? new List<Fixture>();
         }
+        public async Task<List<Odds>> GetPregameOdds(int fixtureId)
+        {
+            var response = await _httpClient.GetAsync($"{BaseUrl}odds?fixture={fixtureId}");
+
+            if (!response.IsSuccessStatusCode) return new List<Odds>();
+
+            var json = await response.Content.ReadAsStringAsync();
+            var apiResponse = JsonSerializer.Deserialize<ApiFootballOddsResponse>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            return apiResponse?.Response ?? new List<Odds>();
+        }
+    }
+
+    public class ApiFootballOddsResponse
+    {
+        public List<Odds> Response { get; set; }
     }
     public class ApiFootballLeaguesResponse
     {
@@ -89,5 +137,8 @@ namespace SportService.Implementation
     {
         public List<Fixture> Response { get; set; }
     }
-
+    public class ApiFootballMatchesResponse
+    {
+        public List<Matches> Response { get; set; }
+    }
 }
