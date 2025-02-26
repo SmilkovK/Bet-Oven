@@ -1,5 +1,6 @@
 ﻿using System.Net.Http;
 using System.Text.Json;
+using System.Linq;
 using System.Threading.Tasks;
 using SportDomain.models;
 
@@ -87,7 +88,6 @@ namespace SportService.Implementation
             return apiResponse?.Response ?? new List<Matches>();
         }
 
-
         public async Task<List<Fixture>> GetLiveMatches()
         {
             var response = await _httpClient.GetAsync($"{BaseUrl}fixtures?live=all");
@@ -102,22 +102,30 @@ namespace SportService.Implementation
 
             return apiResponse?.Response ?? new List<Fixture>();
         }
-        public async Task<List<Odds>> GetPregameOdds(int fixtureId)
+        public async Task<List<Standing>> GetStandings(int leagueId, int season)
         {
-            var response = await _httpClient.GetAsync($"{BaseUrl}odds?fixture={fixtureId}");
+            var response = await _httpClient.GetAsync(
+                $"{BaseUrl}standings?league={leagueId}&season={season}");
 
-            if (!response.IsSuccessStatusCode) return new List<Odds>();
+            if (!response.IsSuccessStatusCode) return new List<Standing>();
 
             var json = await response.Content.ReadAsStringAsync();
-            var apiResponse = JsonSerializer.Deserialize<ApiFootballOddsResponse>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
 
-            return apiResponse?.Response ?? new List<Odds>();
+            var apiResponse = JsonSerializer.Deserialize<ApiFootballStandingsResponse>(json, options);
+
+            return apiResponse?.Response
+                ?.FirstOrDefault()
+                ?.League
+                ?.Standings
+                ?.FirstOrDefault()
+                ?? new List<Standing>();
         }
-    }
 
-    public class ApiFootballOddsResponse
+    }
+    public class ApiFootballStandingsResponse
     {
-        public List<Odds> Response { get; set; }
+        public List<LeagueResponse> Response { get; set; }
     }
     public class ApiFootballLeaguesResponse
     {

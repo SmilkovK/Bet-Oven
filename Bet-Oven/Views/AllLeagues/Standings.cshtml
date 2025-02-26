@@ -1,0 +1,63 @@
+﻿@model SportDomain.models.StandingsViewModel
+@{
+    ViewData["Title"] = "Standings";
+}
+
+<h2 class="text-center my-4">Standings</h2>
+
+<div class="container mb-4">
+    <form asp-action="Standings" method="get" class="row g-3">
+        <input type="hidden" name="leagueId" value="@Model.LeagueId" />
+
+        <div class="col-auto">
+            <select name="season" class="form-select"
+                    asp-for="SelectedSeason"
+                    asp-items="@(new SelectList(Model.AvailableSeasons))">
+            </select>
+        </div>
+
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary">Show Standings</button>
+        </div>
+    </form>
+</div>
+
+@if (Model.Standings != null && Model.Standings.Any())
+{
+    <div class="container">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>Team</th>
+                    <th>Played</th>
+                    <th>Wins</th>
+                    <th>Draws</th>
+                    <th>Losses</th>
+                    <th>Goals Diff</th>
+                    <th>Points</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var team in Model.Standings)
+                {
+                    <tr>
+                        <td>@team.Rank</td>
+                        <td>@team.Team.Logo</td>
+                        <td>@team.Team.Name</td>
+                        <td>@team.All.Played</td>
+                        <td>@team.All.Win</td>
+                        <td>@team.All.Draw</td>
+                        <td>@team.All.Lose</td>
+                        <td>@team.GoalsDiff</td>
+                        <td>@team.Points</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <p class="text-center text-muted">No standings available for the selected league/season.</p>
+}
