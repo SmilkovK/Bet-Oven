@@ -1,46 +1,61 @@
 ﻿@model SportDomain.models.LeagueMatchesViewModel
+<div class="buttons">
+    <button id="today-btn">Today</button>
+    <button id="tomorrow-btn">Tomorrow</button>
+</div>
+<div class="container">
+    <div class="leagues-container">
+        <h2 class="section-title">Leagues</h2>
+        @if (Model.Leagues != null && Model.Leagues.Any())
+        {
+            <ul class="leagues-list">
+                @foreach (var league in Model.Leagues)
+                {
+                    <li class="league-item" onclick="showMatches(@league.League.Id)">
+                        <img src="@league.League.Logo" class="league-logo" />
+                        <span class="league-name">@league.League.Name</span>
+                    </li>
+                }
+            </ul>
+        }
+        else
+        {
+            <p>No leagues available.</p>
+        }
+    </div>
 
-<h2>Leagues</h2>
-<div id="leagues-container">
-    @if (Model.Leagues != null && Model.Leagues.Any())
-    {
-        <ul class="leagues-list">
-            @foreach (var league in Model.Leagues)
-            {
-                <li class="league-item" onclick="showMatches(@league.League.Id)">
-                    <img src="@league.League.Logo" class="item-logo" width="30" height="30" />
-                    <strong>@league.League.Name</strong> (Type: @league.League.Type)
-                </li>
-                <div id="matches-@league.League.Id" class="matches-container" style="display: none;"></div>
-            }
-        </ul>
-    }
-    else
-    {
-        <p>No leagues available.</p>
-    }
+    <div class="matches-container">
+        <h2 class="sectio-ntitle">Matches</h2>
+        @if (Model.Matches != null && Model.Matches.Any())
+        {
+            <ul class="match-list">
+                @foreach (var match in Model.Matches)
+                {
+                    <li class="match-item" onclick="showDetailedOdds(@match.Id)">
+                        <div class="teams">
+                            <img src="@match.Teams.Home.Logo" width="30" /> @match.Teams.Home.Name
+                            <div class="odds" id="homeOdd">@match.Odds.HomeWin</div>
+                            <div class="odds" id="drawOdd">@match.Odds.Draw</div>
+                            <div class="odds" id="homeOdd">@match.Odds.AwayWin</div>
+                            <img src="@match.Teams.Away.Logo" width="30" /> @match.Teams.Away.Name
+                        </div>
+                    </li>
+                }
+            </ul>
+        }
+        <div id="matches-content"></div>
+    </div>
 </div>
 
 <script>
     function showMatches(leagueId) {
-        let matchContainer = document.getElementById(`matches-${leagueId}`);
-
-        // Toggle visibility
-        if (matchContainer.style.display === "block") {
-            matchContainer.style.display = "none";
-            return;
-        }
-
-        // Hide all other matches
-        document.querySelectorAll(".matches-container").forEach(div => {
-            div.style.display = "none";
-        });
+        let matchContainer = document.getElementById("matches-content");
 
         // Fetch and display matches
         fetch(`/api/fixtures?league=${leagueId}`)
             .then(response => response.json())
             .then(matches => {
-                let matchesHtml = "<h3>Matches</h3><div class='matches-grid'>";
+                let matchesHtml = "<h3>Today's Matches</h3><div class='matches-grid'>";
                 matches.slice(0, 5).forEach(match => {
                     matchesHtml += `
                         <div class='match-card'>
@@ -59,40 +74,57 @@
                 });
                 matchesHtml += "</div>";
                 matchContainer.innerHTML = matchesHtml;
-                matchContainer.style.display = "block";
             });
     }
 </script>
 
 <style>
-    .leagues-list {
-        list-style-type: none;
-        padding: 0;
-        width: auto;
-        align-content: center;
-        text-align: center;
+    .container {
+        display: flex;
+        height: 100vh; /* Full screen height */
+        width: 100vw; 
+        flex-direction: row;
+        align-items: flex-start; /* Prevents stretching */
+    }
+
+
+    .leagues-container {
+        width: 100%; /* Takes up 25% */
+        height: 100vh; /* Full screen height */
+        overflow-y: auto;
+        border-right: 2px solid #ddd;
+        padding: 10px;
+        color: white;
+        background-color: #1e1e2d; /* Dark background */
     }
 
     .league-item {
-        cursor: pointer;
-        padding: 10px;
-        margin: 5px 0;
-        border: 1px solid #ddd;
         display: flex;
         align-items: center;
-    }
-
-    .matches-grid {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-        margin-top: 10px;
-    }
-
-    .match-card {
-        width: 200px;
         padding: 10px;
-        border: 1px solid #ddd;
-        text-align: center;
+        cursor: pointer;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
     }
+
+    .league-logo {
+        width: 30px;
+        height: 30px;
+        margin-right: 10px;
+    }
+
+    .matches-container {
+        width: 100%;
+        height: 100vh;
+        padding: 20px;
+        flex-grow: 1;
+        overflow-y: auto;
+        background-color: #2b2b3d;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        align-items: center; /* Center content */
+        justify-content: flex-start;
+    }
+
+
 </style>
