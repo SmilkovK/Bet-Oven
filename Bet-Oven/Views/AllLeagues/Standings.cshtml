@@ -3,7 +3,7 @@
     ViewData["Title"] = "Standings";
 }
 
-<h2 class="text-center my-4">Standings</h2>
+<h2 class="text-center my-4">Standings for the @Model.SelectedSeason season</h2>
 
 <div class="container mb-4">
     <form asp-action="Standings" method="get" class="row g-3">
@@ -43,8 +43,7 @@
                 {
                     <tr>
                         <td>@team.Rank</td>
-                        <td>@team.Team.Logo</td>
-                        <td>@team.Team.Name</td>
+                        <td><img class="slika" src="@team.Team.Logo" />@team.Team.Name</td>
                         <td>@team.All.Played</td>
                         <td>@team.All.Win</td>
                         <td>@team.All.Draw</td>
@@ -61,3 +60,13 @@ else
 {
     <p class="text-center text-muted">No standings available for the selected league/season.</p>
 }
+<style>
+    .slika {
+        width: 30px;
+        height: 30px;
+        object-fit: contain;
+        margin-right: 8px;
+        vertical-align: middle;
+    }
+
+</style>
