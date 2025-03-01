@@ -11,10 +11,13 @@
             <ul class="leagues-list">
                 @foreach (var league in Model.Leagues)
                 {
-                    <li class="league-item" onclick="showMatches(@league.League.Id)">
-                        <img src="@league.League.Logo" class="league-logo" />
-                        <span class="league-name">@league.League.Name</span>
-                    </li>
+                    if (Model.FixturesGroupedByLeague.ContainsKey(league.League.Id))
+                    {
+                        <li class="league-item" onclick="showMatches(@league.League.Id)">
+                            <img src="@league.League.Logo" class="league-logo" />
+                            <span class="league-name">@league.League.Name</span>
+                        </li>
+                    }
                 }
             </ul>
         }
@@ -25,56 +28,58 @@
     </div>
 
     <div class="matches-container">
-        <h2 class="sectio-ntitle">Matches</h2>
-        @if (Model.Matches != null && Model.Matches.Any())
-        {
-            <ul class="match-list">
-                @foreach (var match in Model.Matches)
-                {
-                    <li class="match-item" onclick="showDetailedOdds(@match.Id)">
-                        <div class="teams">
-                            <img src="@match.Teams.Home.Logo" width="30" /> @match.Teams.Home.Name
-                            <div class="odds" id="homeOdd">@match.Odds.HomeWin</div>
-                            <div class="odds" id="drawOdd">@match.Odds.Draw</div>
-                            <div class="odds" id="homeOdd">@match.Odds.AwayWin</div>
-                            <img src="@match.Teams.Away.Logo" width="30" /> @match.Teams.Away.Name
-                        </div>
-                    </li>
-                }
-            </ul>
-        }
-        <div id="matches-content"></div>
+        <h2 class="section-title">Matches</h2>
+        <ul class="match-list" id="match-list">
+            <!-- Matches will be populated here by JavaScript -->
+        </ul>
     </div>
 </div>
 
 <script>
-    function showMatches(leagueId) {
-        let matchContainer = document.getElementById("matches-content");
+        function showMatches(leagueId) {
+        let matchContainer = document.getElementById("match-list");
+        matchContainer.innerHTML = "<p>Loading matches...</p>";
 
-        // Fetch and display matches
-        fetch(`/api/fixtures?league=${leagueId}`)
-            .then(response => response.json())
-            .then(matches => {
-                let matchesHtml = "<h3>Today's Matches</h3><div class='matches-grid'>";
-                matches.slice(0, 5).forEach(match => {
-                    matchesHtml += `
-                        <div class='match-card'>
-                            <div class='teams'>
-                                <img src="${match.teams.home.logo}" width="30"/> ${match.teams.home.name}
-                                vs
-                                <img src="${match.teams.away.logo}" width="30"/> ${match.teams.away.name}
-                            </div>
-                            <div class='odds'>
-                                <strong>Bet365 Odds</strong><br>
-                                Home: ${match.odds?.homeWin || 'N/A'}
-                                Draw: ${match.odds?.draw || 'N/A'}
-                                Away: ${match.odds?.awayWin || 'N/A'}
-                            </div>
-                        </div>`;
-                });
-                matchesHtml += "</div>";
-                matchContainer.innerHTML = matchesHtml;
+        // Use the data passed from the backend
+        let fixtures = @Html.Raw(Json.Serialize(Model.FixturesGroupedByLeague));
+
+        if (!fixtures[leagueId]) {
+            matchContainer.innerHTML = "<p>No matches available for this league.</p>";
+            return;
+        }
+
+        let matchesHtml = fixtures[leagueId].map(fixture => {
+            // Convert UTC date to local time
+            const matchTime = new Date(fixture.date).toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true // Use 12-hour format (e.g., 3:00 PM)
             });
+
+            // Find the "Match Winner" odds from Bet365
+            let bet365 = fixture.odds?.bookmakers?.find(b => b.name === "Bet365");
+            let matchWinnerOdds = bet365?.bets?.find(bet => bet.name === "Match Winner");
+
+            // Extract home, draw, and away odds
+            let homeWin = matchWinnerOdds?.values?.find(v => v.value === "Home")?.odd ?? 'N/A';
+            let draw = matchWinnerOdds?.values?.find(v => v.value === "Draw")?.odd ?? 'N/A';
+            let awayWin = matchWinnerOdds?.values?.find(v => v.value === "Away")?.odd ?? 'N/A';
+
+            return `
+                <div class='match-row'>
+                    <span class="match-time">${matchTime}</span>
+                    <img class="team-logo" src="${fixture.teams.home.logo}" alt="Home Logo" onerror="this.style.display='none'" />
+                    <span class="team-name">${fixture.teams.home.name}</span>
+                    <span class="odds">${homeWin}</span>
+                    <span class="odds">${draw}</span>
+                    <span class="odds">${awayWin}</span>
+                    <span class="team-name">${fixture.teams.away.name}</span>
+                    <img class="team-logo" src="${fixture.teams.away.logo}" alt="Away Logo" onerror="this.style.display='none'" />
+                </div>
+            `;
+        }).join("");
+
+        matchContainer.innerHTML = matchesHtml;
     }
 </script>
 
@@ -89,7 +94,7 @@
 
 
     .leagues-container {
-        width: 100%; /* Takes up 25% */
+        width: 20%; /* Takes up 25% */
         height: 100vh; /* Full screen height */
         overflow-y: auto;
         border-right: 2px solid #ddd;
@@ -99,12 +104,15 @@
     }
 
     .league-item {
-        display: flex;
-        align-items: center;
-        padding: 10px;
-        cursor: pointer;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 12px;
+        margin-bottom: 5px;
+        border-radius: 5px;
+        transition: background 0.3s;
     }
+
+        .league-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
 
     .league-logo {
         width: 30px;
@@ -113,10 +121,9 @@
     }
 
     .matches-container {
-        width: 100%;
+        width: 80%;
         height: 100vh;
         padding: 20px;
-        flex-grow: 1;
         overflow-y: auto;
         background-color: #2b2b3d;
         color: white;
@@ -126,5 +133,43 @@
         justify-content: flex-start;
     }
 
+    .match-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background-color: #25253A;
+        color: white;
+        padding: 10px;
+        border-radius: 5px;
+        margin: 5px 0;
+        width: 90%;
+        gap: 10px;
+    }
+
+    .team-logo {
+        width: 30px;
+        height: 30px;
+    }
+
+    .team-name {
+        flex: 1; /* Takes equal space */
+        text-align: center;
+        font-weight: bold;
+    }
+
+    .odds {
+        width: 50px;
+        text-align: center;
+        background: #444;
+        padding: 5px;
+        border-radius: 5px;
+    }
+
+    .match-item {
+        padding: 12px;
+        margin-bottom: 5px;
+        border-radius: 5px;
+        transition: background 0.3s;
+    }
 
 </style>

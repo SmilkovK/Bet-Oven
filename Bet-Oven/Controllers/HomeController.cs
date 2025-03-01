@@ -36,17 +36,24 @@ namespace Bet_Oven.Controllers
 
             // Fetch leagues and today's fixtures separately
             var leagues = await _footballService.GetLeagues();
-            var matches = await _footballService.GetTodaysFixtures();
+            var fixtures = await _footballService.GetTodaysFixtures();
 
-            // Pass both leagues & matches to the view
+             //Group fixtures by league
+            var fixturesGroupedByLeague = fixtures
+                .GroupBy(f => f.League.Id)
+                .ToDictionary(g => g.Key, g => g.ToList());
+
+            //Pass both leagues & grouped fixtures to the view
             var viewModel = new LeagueMatchesViewModel
             {
                 Leagues = leagues,
-                Matches = matches
+                FixturesGroupedByLeague = fixturesGroupedByLeague
             };
 
             return View(viewModel);
+            return View();
         }
+      
 
         public IActionResult Privacy()
         {
