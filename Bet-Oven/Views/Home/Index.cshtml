@@ -8,18 +8,18 @@
         <h2 class="section-title">Leagues</h2>
         @if (Model.Leagues != null && Model.Leagues.Any())
         {
-            <ul class="leagues-list">
+            <div class="leagues-list">
                 @foreach (var league in Model.Leagues)
                 {
                     if (Model.FixturesGroupedByLeague.ContainsKey(league.League.Id))
                     {
-                        <li class="league-item" onclick="showMatches(@league.League.Id)">
+                        <div class="league-item" onclick="showMatches(@league.League.Id)">
                             <img src="@league.League.Logo" class="league-logo" />
                             <span class="league-name">@league.League.Name</span>
-                        </li>
+                        </div>
                     }
                 }
-            </ul>
+            </div>
         }
         else
         {
@@ -29,9 +29,9 @@
 
     <div class="matches-container">
         <h2 class="section-title">Matches</h2>
-        <ul class="match-list" id="match-list">
-            <!-- Matches will be populated here by JavaScript -->
-        </ul>
+        <div class="match-list" id="match-list">
+            
+        </div>
     </div>
 </div>
 
@@ -40,7 +40,6 @@
         let matchContainer = document.getElementById("match-list");
         matchContainer.innerHTML = "<p>Loading matches...</p>";
 
-        // Use the data passed from the backend
         let fixtures = @Html.Raw(Json.Serialize(Model.FixturesGroupedByLeague));
 
         if (!fixtures[leagueId]) {
@@ -49,18 +48,15 @@
         }
 
         let matchesHtml = fixtures[leagueId].map(fixture => {
-            // Convert UTC date to local time
             const matchTime = new Date(fixture.date).toLocaleTimeString([], {
                 hour: '2-digit',
                 minute: '2-digit',
-                hour12: true // Use 12-hour format (e.g., 3:00 PM)
+                hour12: true
             });
 
-            // Find the "Match Winner" odds from Bet365
-            let bet365 = fixture.odds?.bookmakers?.find(b => b.name === "Bet365");
-            let matchWinnerOdds = bet365?.bets?.find(bet => bet.name === "Match Winner");
+            let bet365 = fixture.odds?.bookmakers?.find(b => b.id === '8');
+            let matchWinnerOdds = bet365?.bets?.find(bet => bet.id === '1');    
 
-            // Extract home, draw, and away odds
             let homeWin = matchWinnerOdds?.values?.find(v => v.value === "Home")?.odd ?? 'N/A';
             let draw = matchWinnerOdds?.values?.find(v => v.value === "Draw")?.odd ?? 'N/A';
             let awayWin = matchWinnerOdds?.values?.find(v => v.value === "Away")?.odd ?? 'N/A';
@@ -84,23 +80,29 @@
 </script>
 
 <style>
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background-color: #1e1e2d; 
+        color: white;
+    }
     .container {
         display: flex;
-        height: 100vh; /* Full screen height */
+        height: 100vh;
         width: 100vw; 
         flex-direction: row;
-        align-items: flex-start; /* Prevents stretching */
+        align-items: flex-start;
     }
 
 
     .leagues-container {
-        width: 20%; /* Takes up 25% */
-        height: 100vh; /* Full screen height */
+        width: 20%; 
+        height: 100vh; 
         overflow-y: auto;
         border-right: 2px solid #ddd;
         padding: 10px;
         color: white;
-        background-color: #1e1e2d; /* Dark background */
+        background-color: #1e1e2d; 
     }
 
     .league-item {
@@ -129,7 +131,7 @@
         color: white;
         display: flex;
         flex-direction: column;
-        align-items: center; /* Center content */
+        align-items: center; 
         justify-content: flex-start;
     }
 
@@ -152,7 +154,7 @@
     }
 
     .team-name {
-        flex: 1; /* Takes equal space */
+        flex: 1; 
         text-align: center;
         font-weight: bold;
     }

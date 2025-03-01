@@ -3,7 +3,6 @@ using System.Text.Json;
 using System.Linq;
 using System.Threading.Tasks;
 using SportDomain.models;
-//using Newtonsoft.Json;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace SportService.Implementation
@@ -21,19 +20,6 @@ namespace SportService.Implementation
             _httpClient = httpClient;
             _httpClient.DefaultRequestHeaders.Add("x-apisports-key", ApiKey);
         }
-
-        public async Task<List<TeamInfo>> GetTeams(int leagueId, int season)
-        {
-            var response = await _httpClient.GetAsync($"{BaseUrl}teams?league={leagueId}&season={season}");
-
-            if (!response.IsSuccessStatusCode) return new List<TeamInfo>();
-
-            var json = await response.Content.ReadAsStringAsync();
-            var apiResponse = JsonSerializer.Deserialize<ApiFootballTeamsResponse>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-            return apiResponse?.Response ?? new List<TeamInfo>();
-        }
-
         public async Task<List<Fixture>> GetFixtures(int leagueId, int season)
         {
             var response = await _httpClient.GetAsync($"{BaseUrl}fixtures?league={leagueId}&season={season}");
@@ -47,13 +33,12 @@ namespace SportService.Implementation
 
             foreach (var fixture in fixtures)
             {
-                if (fixture.Timestamp > 0) // Ensure the timestamp is valid
+                if (fixture.Timestamp > 0) 
                 {
                     fixture.Date = DateTimeOffset.FromUnixTimeSeconds(fixture.Timestamp).UtcDateTime;
                 }
             }
 
-            // Fetch odds for each fixture and attach them
             var tasks = fixtures.Select(async fixture =>
             {
                 fixture.Odds = await GetOdds(fixture.Id);
@@ -78,7 +63,6 @@ namespace SportService.Implementation
 
             var leagues = apiResponse?.Response ?? new List<AllLeagues>();
 
-            // Extract league info and current season
             var formattedLeagues = leagues
                 .Select(l => new AllLeagues
                 {
@@ -90,9 +74,9 @@ namespace SportService.Implementation
                         Type = l.League.Type
                     },
                     Country = l.Country,
-                    Seasons = l.Seasons.Where(s => s.Current).ToList() // Only keep current season
+                    Seasons = l.Seasons.Where(s => s.Current).ToList()
                 })
-                .Where(l => l.Seasons.Any()) // Ensure we only return leagues with a current season
+                .Where(l => l.Seasons.Any())
                 .ToList();
 
             return formattedLeagues;
@@ -100,7 +84,7 @@ namespace SportService.Implementation
 
         public async Task<List<Fixture>> GetTodaysFixtures()
         {
-            string today = DateTime.UtcNow.ToString("yyyy-MM-dd"); // Get today's date in YYYY-MM-DD format
+            string today = DateTime.UtcNow.ToString("yyyy-MM-dd");
             var response = await _httpClient.GetAsync($"{BaseUrl}fixtures?date={today}");
 
             if (!response.IsSuccessStatusCode) return new List<Fixture>();
@@ -125,10 +109,9 @@ namespace SportService.Implementation
 
             var fixtures = apiResponse?.Response ?? new List<Fixture>();
 
-            // Map the timestamp to the Date property
             foreach (var fixture in fixtures)
             {
-                if (fixture.Timestamp > 0) // Ensure the timestamp is valid
+                if (fixture.Timestamp > 0) 
                 {
                     fixture.Date = DateTimeOffset.FromUnixTimeSeconds(fixture.Timestamp).UtcDateTime;
                 }
@@ -161,7 +144,7 @@ namespace SportService.Implementation
 
             if (!response.IsSuccessStatusCode)
             {
-                return new Odds(); // Return empty odds if the request fails
+                return new Odds(); 
             }
 
             var json = await response.Content.ReadAsStringAsync();
@@ -171,10 +154,9 @@ namespace SportService.Implementation
 
             if (oddsData == null)
             {
-                return new Odds(); // Return empty odds if no data is found
+                return new Odds(); 
             }
 
-            // Map the API response to the Odds model
             var odds = new Odds
             {
                 Bookmakers = oddsData.Bookmakers

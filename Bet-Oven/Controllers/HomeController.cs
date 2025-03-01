@@ -17,7 +17,7 @@ namespace Bet_Oven.Controllers
     {
         private readonly ILogger<HomeController> _logger;
         private readonly ApplicationDbContext _context;
-        private readonly FootballApiService _footballService; // Using your service
+        private readonly FootballApiService _footballService;
 
         public HomeController(ILogger<HomeController> logger, ApplicationDbContext context, FootballApiService footballService)
         {
@@ -34,16 +34,13 @@ namespace Bet_Oven.Controllers
                                         .Sum(t => t.currencyAmount);
             ViewBag.TotalCurrency = totalCurrency;
 
-            // Fetch leagues and today's fixtures separately
             var leagues = await _footballService.GetLeagues();
             var fixtures = await _footballService.GetTodaysFixtures();
 
-             //Group fixtures by league
             var fixturesGroupedByLeague = fixtures
                 .GroupBy(f => f.League.Id)
                 .ToDictionary(g => g.Key, g => g.ToList());
 
-            //Pass both leagues & grouped fixtures to the view
             var viewModel = new LeagueMatchesViewModel
             {
                 Leagues = leagues,
@@ -51,7 +48,6 @@ namespace Bet_Oven.Controllers
             };
 
             return View(viewModel);
-            return View();
         }
       
 

@@ -14,7 +14,7 @@ namespace SportDomain.models
     }
     public class LeagueInfo
     {
-        public int Id { get; set; }
+        public int Id { get; set; } 
         public string Name { get; set; }
         public string Type { get; set; }
         public string Logo { get; set; }
@@ -36,8 +36,8 @@ namespace SportDomain.models
     public class Fixture
     {
         public int Id { get; set; }
-        public DateTime? Date { get; set; } // This will store the match time
-        public int Timestamp { get; set; } // This will store the match time in Unix timestamp
+        public DateTime? Date { get; set; }
+        public int Timestamp { get; set; } 
         public LeagueInfo League { get; set; }
         public string Status { get; set; }
         public Teams Teams { get; set; }
@@ -113,6 +113,7 @@ namespace SportDomain.models
 
     public class Bet
     {
+        public int Id { get; set; }
         public string Name { get; set; }
         public List<BetValue> Values { get; set; } = new List<BetValue>();
     }
