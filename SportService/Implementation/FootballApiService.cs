@@ -13,12 +13,13 @@ namespace SportService.Implementation
         private const string BaseUrl = "https://v3.football.api-sports.io/";
         private const string ApiKey = "c26581fbcde99337cec7d73133eaad2a";
         private const string ApiKey2 = "6aa5657eb2e9e42c02893f4617cb4a71";
+        private const string ApiKey3 = "3e5d931483d36220980032117ee6e6dd";
 
 
         public FootballApiService(HttpClient httpClient)
         {
             _httpClient = httpClient;
-            _httpClient.DefaultRequestHeaders.Add("x-apisports-key", ApiKey);
+            _httpClient.DefaultRequestHeaders.Add("x-apisports-key", ApiKey3);
         }
         public async Task<List<Fixture>> GetFixtures(int leagueId, int season)
         {

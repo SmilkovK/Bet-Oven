@@ -10,5 +10,10 @@ namespace SportDomain.models
     {
         public List<AllLeagues> Leagues { get; set; }
         public Dictionary<int, List<Fixture>> FixturesGroupedByLeague { get; set; }
+        public HashSet<int> FavoriteLeagues { get; set; }
+        public LeagueMatchesViewModel() {
+            FavoriteLeagues = new HashSet<int>();
+        }
+
     }
 }

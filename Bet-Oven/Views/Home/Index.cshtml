@@ -8,14 +8,16 @@
         <h2 class="section-title">Leagues</h2>
         @if (Model.Leagues != null && Model.Leagues.Any())
         {
-            <div class="leagues-list">
+            <div class="leagues-list" id="leagues-list">
                 @foreach (var league in Model.Leagues)
                 {
                     if (Model.FixturesGroupedByLeague.ContainsKey(league.League.Id))
                     {
-                        <div class="league-item" onclick="showMatches(@league.League.Id)">
+                        <div class="league-item" onclick="showMatches(@league.League.Id, '@Html.Raw(league.League.Name)')" data-league-id="@league.League.Id">
                             <img src="@league.League.Logo" class="league-logo" />
                             <span class="league-name">@league.League.Name</span>
+                            <span class="star-icon @(Model.FavoriteLeagues.Contains(league.League.Id) ? "favorited" : "")"
+                                  onclick="toggleFavorite(event, @league.League.Id)">&#9733;</span>
                         </div>
                     }
                 }
@@ -28,16 +30,31 @@
     </div>
 
     <div class="matches-container">
-        <h2 class="section-title">Matches</h2>
-        <div class="match-list" id="match-list">
-            
-        </div>
+        <h2 class="section-title" id="league-name">Select a league to view matches</h2>
+        <ul class="match-list" id="match-list"></ul>
     </div>
 </div>
 
+<div id="popup" class="popup hidden">
+    <p id="popup-text"></p>
+    <button onclick="confirmFavorite(true)">Yes</button>
+    <button onclick="confirmFavorite(false)">No</button>
+</div>
+
 <script>
-        function showMatches(leagueId) {
+    let favoriteLeagues = @Html.Raw(Json.Serialize(Model.FavoriteLeagues));
+    let pendingFavoriteAction = null;
+
+    // Your original showMatches function
+    function showMatches(leagueId, leagueName) {
+        console.log("League ID:", leagueId);
+        console.log("League Name:", leagueName);
+
+        let leagueNameElement = document.getElementById("league-name");
         let matchContainer = document.getElementById("match-list");
+
+        leagueNameElement.textContent = leagueName;
+
         matchContainer.innerHTML = "<p>Loading matches...</p>";
 
         let fixtures = @Html.Raw(Json.Serialize(Model.FixturesGroupedByLeague));
@@ -55,7 +72,7 @@
             });
 
             let bet365 = fixture.odds?.bookmakers?.find(b => b.id === '8');
-            let matchWinnerOdds = bet365?.bets?.find(bet => bet.id === '1');    
+            let matchWinnerOdds = bet365?.bets?.find(bet => bet.id === '1');
 
             let homeWin = matchWinnerOdds?.values?.find(v => v.value === "Home")?.odd ?? 'N/A';
             let draw = matchWinnerOdds?.values?.find(v => v.value === "Draw")?.odd ?? 'N/A';
@@ -77,6 +94,55 @@
 
         matchContainer.innerHTML = matchesHtml;
     }
+
+    // New favorite functionality
+    function toggleFavorite(event, leagueId) {
+        event.stopPropagation(); // Prevent the league-item click event from firing
+        pendingFavoriteAction = leagueId;
+        let isFavorite = favoriteLeagues.includes(leagueId);
+        document.getElementById("popup-text").textContent = isFavorite ?
+            "Are you sure you want to remove this league from favorites?" :
+            "Are you sure you want to add this league to favorites?";
+        document.getElementById("popup").classList.remove("hidden");
+    }
+
+        function confirmFavorite(confirmed) {
+        if (!confirmed || pendingFavoriteAction === null) {
+            document.getElementById("popup").classList.add("hidden");
+            return;
+        }
+
+        fetch(`/ToggleFavorite?leagueId=${pendingFavoriteAction}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                console.log("Favorite leagues updated:", data.favoriteLeagues);
+                favoriteLeagues = data.favoriteLeagues;
+
+                // Update the star icon for the toggled league
+                let starIcon = document.querySelector(`.league-item[data-league-id="${pendingFavoriteAction}"] .star-icon`);
+                if (starIcon) {
+                    starIcon.classList.toggle("favorited", data.favoriteLeagues.includes(pendingFavoriteAction));
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error toggling favorite:', error);
+        });
+
+        document.getElementById("popup").classList.add("hidden");
+    }
 </script>
 
 <style>
@@ -96,7 +162,7 @@
 
 
     .leagues-container {
-        width: 20%; 
+        width: 25%; 
         height: 100vh; 
         overflow-y: auto;
         border-right: 2px solid #ddd;
@@ -174,4 +240,42 @@
         transition: background 0.3s;
     }
 
+    .star-icon {
+        cursor: pointer;
+        margin-left: 10px;
+        color: transparent;
+        text-shadow: 0 0 0 white;
+        opacity: 0;
+        float: right;
+    }
+
+    .league-item:hover .star-icon {
+        color: white;
+        transition: 0.5s;
+        opacity: 100%;
+    }
+
+    .favorited {
+        color: yellow !important;
+        opacity: 100%;
+        text-shadow: none;
+    }
+
+    .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        color: black;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+        .popup.hidden {
+            display: none;
+        }
 </style>
