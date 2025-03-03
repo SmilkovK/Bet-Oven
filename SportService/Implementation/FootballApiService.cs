@@ -11,27 +11,34 @@ namespace SportService.Implementation
     {
         private readonly HttpClient _httpClient;
         private const string BaseUrl = "https://v3.football.api-sports.io/";
-        private const string ApiKey = "6aa5657eb2e9e42c02893f4617cb4a71";
-        private const string ApiKey2 = "644cf906aee148fd974fe3ee08078e4a";
+        private const string ApiKey = "c26581fbcde99337cec7d73133eaad2a";
+        private const string ApiKey2 = "6aa5657eb2e9e42c02893f4617cb4a71";
+        private const string ApiKey3 = "3e5d931483d36220980032117ee6e6dd";
 
 
         public FootballApiService(HttpClient httpClient)
         {
             _httpClient = httpClient;
-            _httpClient.DefaultRequestHeaders.Add("x-apisports-key", ApiKey);
+            _httpClient.DefaultRequestHeaders.Add("x-apisports-key", ApiKey3);
         }
-
-        public async Task<List<TeamInfo>> GetTeams(int leagueId, int season)
+        public async Task<List<Fixture>> GetFixtures(int leagueId, int season)
         {
-            var response = await _httpClient.GetAsync($"{BaseUrl}teams?league={leagueId}&season={season}");
+            var response = await _httpClient.GetAsync($"{BaseUrl}fixtures?league={leagueId}&season={season}");
 
-            if (!response.IsSuccessStatusCode) return new List<TeamInfo>();
+            if (!response.IsSuccessStatusCode) return new List<Fixture>();
 
             var json = await response.Content.ReadAsStringAsync();
-            var apiResponse = JsonSerializer.Deserialize<ApiFootballTeamsResponse>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var apiResponse = JsonSerializer.Deserialize<ApiFootballFixturesResponse>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-            return apiResponse?.Response ?? new List<TeamInfo>();
-        }
+            var fixtures = apiResponse?.Response ?? new List<Fixture>();
+
+            foreach (var fixture in fixtures)
+            {
+                if (fixture.Timestamp > 0)
+                {
+                    fixture.Date = DateTimeOffset.FromUnixTimeSeconds(fixture.Timestamp).UtcDateTime;
+                }
+            }
 
             var tasks = fixtures.Select(async fixture =>
             {
@@ -105,7 +112,7 @@ namespace SportService.Implementation
 
             foreach (var fixture in fixtures)
             {
-                if (fixture.Timestamp > 0) 
+                if (fixture.Timestamp > 0)
                 {
                     fixture.Date = DateTimeOffset.FromUnixTimeSeconds(fixture.Timestamp).UtcDateTime;
                 }
@@ -138,7 +145,7 @@ namespace SportService.Implementation
 
             if (!response.IsSuccessStatusCode)
             {
-                return new Odds(); 
+                return new Odds();
             }
 
             var json = await response.Content.ReadAsStringAsync();
@@ -148,7 +155,7 @@ namespace SportService.Implementation
 
             if (oddsData == null)
             {
-                return new Odds(); 
+                return new Odds();
             }
 
             var odds = new Odds
@@ -206,4 +213,3 @@ namespace SportService.Implementation
         public List<Matches> Response { get; set; }
     }
 }
-
