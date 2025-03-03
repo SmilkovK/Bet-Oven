@@ -1,36 +1,173 @@
 ﻿@model List<SportDomain.models.Fixture>
+@{
+    ViewData["Title"] = "Live Football Matches";
+}
 
-@if (Model != null && Model.Any())
-{
-    <div class="row">
-        @foreach (var match in Model)
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --primary-color: #2A2D34;
+        --secondary-color: #009DDC;
+        --accent-color: #F26430;
+    }
+
+    body {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        font-family: 'Roboto Condensed', sans-serif;
+    }
+
+    .match-card {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease;
+        border: none;
+        position: relative;
+    }
+
+        .match-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+        }
+
+    .team-logo {
+        height: 50px;
+        width: 50px;
+        object-fit: contain;
+    }
+
+    .score-badge {
+        background: var(--secondary-color);
+        font-size: 1.2rem;
+        padding: 8px 20px;
+        border-radius: 25px;
+    }
+
+    .live-pulse {
+        animation: pulse 1.5s infinite;
+    }
+
+    .league-info {
+        border-bottom: 2px solid #f0f0f0;
+        padding-bottom: 0.8rem;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .league-logo {
+        height: 25px;
+        width: auto;
+        max-width: 60px;
+        object-fit: contain;
+    }
+
+    .league-name {
+        font-size: 0.9rem;
+        color: #6c757d;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    @@keyframes pulse {
+        0% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.5;
+        }
+
+        100% {
+            opacity: 1;
+        }
+    }
+</style>
+
+<div class="container py-5">
+    <div class="row g-4">
+        @if (Model != null && Model.Any())
         {
-            <div class="col-md-6 mb-3">
-                <div class="card shadow-lg p-3 bg-white rounded">
-                    <div class="card-body text-center">
-                        <h5 class="card-title text-primary">@match.Date</h5>
-                        <div class="d-flex justify-content-around align-items-center">
-                            <div>
-                                <img src="@match.Teams.Home.Logo" class="rounded-circle" width="60" height="60" alt="Home Team">
-                                <h5 class="mt-2 text-dark">@match.Teams.Home.Name</h5>
+            foreach (var match in Model)
+            {
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="match-card p-4">
+                        <div class="league-info">
+                            @if (match.League != null)
+                            {
+                                @if (!string.IsNullOrEmpty(match.League.Logo))
+                                {
+                                    <img src="@match.League.Logo"
+                                         class="league-logo"
+                                         alt="@match.League.Name">
+                                }
+                                <span class="league-name">@match.League.Name</span>
+                            }
+                            else
+                            {
+                                <span class="league-name">Live Match</span>
+                            }
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <small class="text-muted">
+                                <i class="fas fa-clock me-2"></i>
+                                @match.DisplayDate
+                            </small>
+
+                            <span class="badge bg-danger live-pulse">
+                                <i class="fas fa-circle"></i> LIVE
+                            </span>
+                        </div>
+
+                        <div class="d-flex justify-content-around align-items-center mb-4">
+                            <div class="text-center">
+                                @if (match.Teams?.Home != null)
+                                {
+                                    <img src="@match.Teams.Home.Logo"
+                                         class="team-logo"
+                                         alt="@match.Teams.Home.Name">
+                                    <div class="fw-bold mt-2">@match.Teams.Home.Name</div>
+                                }
                             </div>
-                            <div>
-                                <span class="badge bg-success fs-5">@match.Goals?.Home</span>
-                                <span class="fs-4"> - </span>
-                                <span class="badge bg-danger fs-5">@match.Goals?.Away</span>
+
+                            <div class="score-badge text-white">
+                                @(match.Goals?.Home ?? 0) - @(match.Goals?.Away ?? 0)
                             </div>
-                            <div>
-                                <img src="@match.Teams.Away.Logo" class="rounded-circle" width="60" height="60" alt="Away Team">
-                                <h5 class="mt-2 text-dark">@match.Teams.Away.Name</h5>
+
+                            <div class="text-center">
+                                @if (match.Teams?.Away != null)
+                                {
+                                    <img src="@match.Teams.Away.Logo"
+                                         class="team-logo"
+                                         alt="@match.Teams.Away.Name">
+                                    <div class="fw-bold mt-2">@match.Teams.Away.Name</div>
+                                }
                             </div>
                         </div>
+
+                        <div class="d-grid">
+                            <a href="@Url.Action("MatchDetails", new { fixtureId = match.Id })"
+                               class="btn btn-outline-secondary">
+                                <i class="fas fa-chart-line me-2"></i>Match Insights
+                            </a>
+                        </div>
                     </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col-12">
+                <div class="text-center py-5">
+                    <i class="fas fa-telescope fa-3x text-muted mb-3"></i>
+                    <h3 class="text-muted">No Live Matches Currently</h3>
+                    <p class="text-muted">Check back later for upcoming matches!</p>
                 </div>
             </div>
         }
     </div>
-}
-else
-{
-    <p class="text-center text-muted">No live matches available.</p>
-}
+</div>

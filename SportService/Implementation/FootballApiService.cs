@@ -11,8 +11,6 @@ namespace SportService.Implementation
     {
         private readonly HttpClient _httpClient;
         private const string BaseUrl = "https://v3.football.api-sports.io/";
-        private const string ApiKey = "c26581fbcde99337cec7d73133eaad2a";
-        private const string ApiKey2 = "6aa5657eb2e9e42c02893f4617cb4a71";
         private const string ApiKey3 = "3e5d931483d36220980032117ee6e6dd";
 
 
@@ -106,19 +104,37 @@ namespace SportService.Implementation
             }
 
             var json = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"API Response: {json}");
             var apiResponse = JsonSerializer.Deserialize<ApiFootballResponse>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
             var fixtures = apiResponse?.Response ?? new List<Fixture>();
 
             foreach (var fixture in fixtures)
             {
+                Console.WriteLine($"Fixture: {fixture.Id}, Timestamp: {fixture.Timestamp}");
                 if (fixture.Timestamp > 0)
                 {
-                    fixture.Date = DateTimeOffset.FromUnixTimeSeconds(fixture.Timestamp).UtcDateTime;
+                    fixture.Date = DateTimeOffset.FromUnixTimeSeconds(fixture.Timestamp).DateTime;
+                }
+                else
+                {
+                    fixture.Date = null;
                 }
             }
 
+
             return fixtures;
+        }
+        public async Task<MatchStats> GetFixtureStatistics(int fixtureId)
+        {
+            var response = await _httpClient.GetAsync($"{BaseUrl}fixtures/statistics?fixture={fixtureId}");
+
+            if (!response.IsSuccessStatusCode) return null;
+
+            var json = await response.Content.ReadAsStringAsync();
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+
+            return JsonSerializer.Deserialize<MatchStats>(json, options);
         }
         public async Task<List<Standing>> GetStandings(int leagueId, int season)
         {

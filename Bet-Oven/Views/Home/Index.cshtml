@@ -45,7 +45,6 @@
     let favoriteLeagues = @Html.Raw(Json.Serialize(Model.FavoriteLeagues));
     let pendingFavoriteAction = null;
 
-    // Your original showMatches function
     function showMatches(leagueId, leagueName) {
         console.log("League ID:", leagueId);
         console.log("League Name:", leagueName);
@@ -95,9 +94,8 @@
         matchContainer.innerHTML = matchesHtml;
     }
 
-    // New favorite functionality
     function toggleFavorite(event, leagueId) {
-        event.stopPropagation(); // Prevent the league-item click event from firing
+        event.stopPropagation();
         pendingFavoriteAction = leagueId;
         let isFavorite = favoriteLeagues.includes(leagueId);
         document.getElementById("popup-text").textContent = isFavorite ?
@@ -130,7 +128,6 @@
                 console.log("Favorite leagues updated:", data.favoriteLeagues);
                 favoriteLeagues = data.favoriteLeagues;
 
-                // Update the star icon for the toggled league
                 let starIcon = document.querySelector(`.league-item[data-league-id="${pendingFavoriteAction}"] .star-icon`);
                 if (starIcon) {
                     starIcon.classList.toggle("favorited", data.favoriteLeagues.includes(pendingFavoriteAction));
