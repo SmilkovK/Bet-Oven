@@ -14,7 +14,7 @@ namespace SportDomain.models
     }
     public class LeagueInfo
     {
-        public int Id { get; set; }
+        public int Id { get; set; } 
         public string Name { get; set; }
         public string Type { get; set; }
         public string Logo { get; set; }
@@ -37,6 +37,8 @@ namespace SportDomain.models
     {
         public int Id { get; set; }
         public DateTime? Date { get; set; }
+        public int Timestamp { get; set; } 
+        public LeagueInfo League { get; set; }
         public string Status { get; set; }
         public Teams Teams { get; set; }
         public Goals Goals { get; set; }
@@ -92,11 +94,33 @@ namespace SportDomain.models
         public int SelectedSeason { get; set; }
         public int LeagueId { get; set; }
     }
+    public class OddsResponse
+    {
+        public List<Bookmaker> Bookmakers { get; set; }
+    }
+
     public class Odds
     {
-        public string Bookmakers { get; set; }
-        public double? HomeWin { get; set; }
-        public double? Draw { get; set; }
-        public double? AwayWin { get; set; }
+        public List<Bookmaker> Bookmakers { get; set; } = new List<Bookmaker>();
+    }
+
+    public class Bookmaker
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public List<Bet> Bets { get; set; } = new List<Bet>();
+    }
+
+    public class Bet
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public List<BetValue> Values { get; set; } = new List<BetValue>();
+    }
+
+    public class BetValue
+    {
+        public string Value { get; set; }
+        public double Odd { get; set; }
     }
 }

@@ -8,15 +8,20 @@
         <h2 class="section-title">Leagues</h2>
         @if (Model.Leagues != null && Model.Leagues.Any())
         {
-            <ul class="leagues-list">
+            <div class="leagues-list" id="leagues-list">
                 @foreach (var league in Model.Leagues)
                 {
-                    <li class="league-item" onclick="showMatches(@league.League.Id)">
-                        <img src="@league.League.Logo" class="league-logo" />
-                        <span class="league-name">@league.League.Name</span>
-                    </li>
+                    if (Model.FixturesGroupedByLeague.ContainsKey(league.League.Id))
+                    {
+                        <div class="league-item" onclick="showMatches(@league.League.Id, '@Html.Raw(league.League.Name)')" data-league-id="@league.League.Id">
+                            <img src="@league.League.Logo" class="league-logo" />
+                            <span class="league-name">@league.League.Name</span>
+                            <span class="star-icon @(Model.FavoriteLeagues.Contains(league.League.Id) ? "favorited" : "")"
+                                  onclick="toggleFavorite(event, @league.League.Id)">&#9733;</span>
+                        </div>
+                    }
                 }
-            </ul>
+            </div>
         }
         else
         {
@@ -25,86 +30,157 @@
     </div>
 
     <div class="matches-container">
-        <h2 class="sectio-ntitle">Matches</h2>
-        @if (Model.Matches != null && Model.Matches.Any())
-        {
-            <ul class="match-list">
-                @foreach (var match in Model.Matches)
-                {
-                    <li class="match-item" onclick="showDetailedOdds(@match.Id)">
-                        <div class="teams">
-                            <img src="@match.Teams.Home.Logo" width="30" /> @match.Teams.Home.Name
-                            <div class="odds" id="homeOdd">@match.Odds.HomeWin</div>
-                            <div class="odds" id="drawOdd">@match.Odds.Draw</div>
-                            <div class="odds" id="homeOdd">@match.Odds.AwayWin</div>
-                            <img src="@match.Teams.Away.Logo" width="30" /> @match.Teams.Away.Name
-                        </div>
-                    </li>
-                }
-            </ul>
-        }
-        <div id="matches-content"></div>
+        <h2 class="section-title" id="league-name">Select a league to view matches</h2>
+        <ul class="match-list" id="match-list"></ul>
     </div>
 </div>
 
-<script>
-    function showMatches(leagueId) {
-        let matchContainer = document.getElementById("matches-content");
+<div id="popup" class="popup hidden">
+    <p id="popup-text"></p>
+    <button onclick="confirmFavorite(true)">Yes</button>
+    <button onclick="confirmFavorite(false)">No</button>
+</div>
 
-        // Fetch and display matches
-        fetch(`/api/fixtures?league=${leagueId}`)
-            .then(response => response.json())
-            .then(matches => {
-                let matchesHtml = "<h3>Today's Matches</h3><div class='matches-grid'>";
-                matches.slice(0, 5).forEach(match => {
-                    matchesHtml += `
-                        <div class='match-card'>
-                            <div class='teams'>
-                                <img src="${match.teams.home.logo}" width="30"/> ${match.teams.home.name}
-                                vs
-                                <img src="${match.teams.away.logo}" width="30"/> ${match.teams.away.name}
-                            </div>
-                            <div class='odds'>
-                                <strong>Bet365 Odds</strong><br>
-                                Home: ${match.odds?.homeWin || 'N/A'}
-                                Draw: ${match.odds?.draw || 'N/A'}
-                                Away: ${match.odds?.awayWin || 'N/A'}
-                            </div>
-                        </div>`;
-                });
-                matchesHtml += "</div>";
-                matchContainer.innerHTML = matchesHtml;
+<script>
+    let favoriteLeagues = @Html.Raw(Json.Serialize(Model.FavoriteLeagues));
+    let pendingFavoriteAction = null;
+
+    // Your original showMatches function
+    function showMatches(leagueId, leagueName) {
+        console.log("League ID:", leagueId);
+        console.log("League Name:", leagueName);
+
+        let leagueNameElement = document.getElementById("league-name");
+        let matchContainer = document.getElementById("match-list");
+
+        leagueNameElement.textContent = leagueName;
+
+        matchContainer.innerHTML = "<p>Loading matches...</p>";
+
+        let fixtures = @Html.Raw(Json.Serialize(Model.FixturesGroupedByLeague));
+
+        if (!fixtures[leagueId]) {
+            matchContainer.innerHTML = "<p>No matches available for this league.</p>";
+            return;
+        }
+
+        let matchesHtml = fixtures[leagueId].map(fixture => {
+            const matchTime = new Date(fixture.date).toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
             });
+
+            let bet365 = fixture.odds?.bookmakers?.find(b => b.id === '8');
+            let matchWinnerOdds = bet365?.bets?.find(bet => bet.id === '1');
+
+            let homeWin = matchWinnerOdds?.values?.find(v => v.value === "Home")?.odd ?? 'N/A';
+            let draw = matchWinnerOdds?.values?.find(v => v.value === "Draw")?.odd ?? 'N/A';
+            let awayWin = matchWinnerOdds?.values?.find(v => v.value === "Away")?.odd ?? 'N/A';
+
+            return `
+                <div class='match-row'>
+                    <span class="match-time">${matchTime}</span>
+                    <img class="team-logo" src="${fixture.teams.home.logo}" alt="Home Logo" onerror="this.style.display='none'" />
+                    <span class="team-name">${fixture.teams.home.name}</span>
+                    <span class="odds">${homeWin}</span>
+                    <span class="odds">${draw}</span>
+                    <span class="odds">${awayWin}</span>
+                    <span class="team-name">${fixture.teams.away.name}</span>
+                    <img class="team-logo" src="${fixture.teams.away.logo}" alt="Away Logo" onerror="this.style.display='none'" />
+                </div>
+            `;
+        }).join("");
+
+        matchContainer.innerHTML = matchesHtml;
+    }
+
+    // New favorite functionality
+    function toggleFavorite(event, leagueId) {
+        event.stopPropagation(); // Prevent the league-item click event from firing
+        pendingFavoriteAction = leagueId;
+        let isFavorite = favoriteLeagues.includes(leagueId);
+        document.getElementById("popup-text").textContent = isFavorite ?
+            "Are you sure you want to remove this league from favorites?" :
+            "Are you sure you want to add this league to favorites?";
+        document.getElementById("popup").classList.remove("hidden");
+    }
+
+        function confirmFavorite(confirmed) {
+        if (!confirmed || pendingFavoriteAction === null) {
+            document.getElementById("popup").classList.add("hidden");
+            return;
+        }
+
+        fetch(`/ToggleFavorite?leagueId=${pendingFavoriteAction}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                console.log("Favorite leagues updated:", data.favoriteLeagues);
+                favoriteLeagues = data.favoriteLeagues;
+
+                // Update the star icon for the toggled league
+                let starIcon = document.querySelector(`.league-item[data-league-id="${pendingFavoriteAction}"] .star-icon`);
+                if (starIcon) {
+                    starIcon.classList.toggle("favorited", data.favoriteLeagues.includes(pendingFavoriteAction));
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error toggling favorite:', error);
+        });
+
+        document.getElementById("popup").classList.add("hidden");
     }
 </script>
 
 <style>
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background-color: #1e1e2d; 
+        color: white;
+    }
     .container {
         display: flex;
-        height: 100vh; /* Full screen height */
+        height: 100vh;
         width: 100vw; 
         flex-direction: row;
-        align-items: flex-start; /* Prevents stretching */
+        align-items: flex-start;
     }
 
 
     .leagues-container {
-        width: 100%; /* Takes up 25% */
-        height: 100vh; /* Full screen height */
+        width: 25%; 
+        height: 100vh; 
         overflow-y: auto;
         border-right: 2px solid #ddd;
         padding: 10px;
         color: white;
-        background-color: #1e1e2d; /* Dark background */
+        background-color: #1e1e2d; 
     }
 
     .league-item {
-        display: flex;
-        align-items: center;
-        padding: 10px;
-        cursor: pointer;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 12px;
+        margin-bottom: 5px;
+        border-radius: 5px;
+        transition: background 0.3s;
     }
+
+        .league-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
 
     .league-logo {
         width: 30px;
@@ -113,18 +189,93 @@
     }
 
     .matches-container {
-        width: 100%;
+        width: 80%;
         height: 100vh;
         padding: 20px;
-        flex-grow: 1;
         overflow-y: auto;
         background-color: #2b2b3d;
         color: white;
         display: flex;
         flex-direction: column;
-        align-items: center; /* Center content */
+        align-items: center; 
         justify-content: flex-start;
     }
 
+    .match-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background-color: #25253A;
+        color: white;
+        padding: 10px;
+        border-radius: 5px;
+        margin: 5px 0;
+        width: 90%;
+        gap: 10px;
+    }
 
+    .team-logo {
+        width: 30px;
+        height: 30px;
+    }
+
+    .team-name {
+        flex: 1; 
+        text-align: center;
+        font-weight: bold;
+    }
+
+    .odds {
+        width: 50px;
+        text-align: center;
+        background: #444;
+        padding: 5px;
+        border-radius: 5px;
+    }
+
+    .match-item {
+        padding: 12px;
+        margin-bottom: 5px;
+        border-radius: 5px;
+        transition: background 0.3s;
+    }
+
+    .star-icon {
+        cursor: pointer;
+        margin-left: 10px;
+        color: transparent;
+        text-shadow: 0 0 0 white;
+        opacity: 0;
+        float: right;
+    }
+
+    .league-item:hover .star-icon {
+        color: white;
+        transition: 0.5s;
+        opacity: 100%;
+    }
+
+    .favorited {
+        color: yellow !important;
+        opacity: 100%;
+        text-shadow: none;
+    }
+
+    .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        color: black;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+        .popup.hidden {
+            display: none;
+        }
 </style>

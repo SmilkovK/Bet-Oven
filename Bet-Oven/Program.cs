@@ -8,6 +8,7 @@ using SportRepository.Interface;
 using SportService.Interface;
 using SportService.Implementation;
 using SportDomain.models;
+using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,11 +25,11 @@ builder.Services.AddControllersWithViews();
 
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped(typeof(IUserRepository), typeof(UserRepository));
+builder.Services.AddScoped(typeof(IFavoriteService), typeof(FavoriteService));
 
 builder.Services.AddHttpClient();
 
 builder.Services.AddHttpClient<FootballApiService>();
-
 
 
 
