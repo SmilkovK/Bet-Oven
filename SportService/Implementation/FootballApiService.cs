@@ -11,23 +11,12 @@ namespace SportService.Implementation
         private readonly HttpClient _httpClient;
         private const string BaseUrl = "https://v3.football.api-sports.io/";
         private const string ApiKey = "6aa5657eb2e9e42c02893f4617cb4a71";
+        private const string ApiKey2 = "644cf906aee148fd974fe3ee08078e4a";
 
         public FootballApiService(HttpClient httpClient)
         {
             _httpClient = httpClient;
-            _httpClient.DefaultRequestHeaders.Add("x-apisports-key", ApiKey);
-        }
-
-        public async Task<List<TeamInfo>> GetTeams(int leagueId, int season)
-        {
-            var response = await _httpClient.GetAsync($"{BaseUrl}teams?league={leagueId}&season={season}");
-
-            if (!response.IsSuccessStatusCode) return new List<TeamInfo>();
-
-            var json = await response.Content.ReadAsStringAsync();
-            var apiResponse = JsonSerializer.Deserialize<ApiFootballTeamsResponse>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-            return apiResponse?.Response ?? new List<TeamInfo>();
+            _httpClient.DefaultRequestHeaders.Add("x-apisports-key", ApiKey2);
         }
 
         public async Task<List<Fixture>> GetFixtures(int leagueId, int season)
