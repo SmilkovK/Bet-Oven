@@ -43,10 +43,16 @@ namespace SportDomain.models
         : "Time TBD";
         public int Timestamp { get; set; } 
         public LeagueInfo League { get; set; }
-        public string Status { get; set; }
+        public MatchStatus Status { get; set; }
         public Teams Teams { get; set; }
         public Goals Goals { get; set; }
         public Odds Odds { get; set; }
+    }
+    public class MatchStatus
+    {
+        public string Long { get; set; }
+        public string Short { get; set; }
+        public int? Elapsed { get; set; }
     }
 
     public class Teams

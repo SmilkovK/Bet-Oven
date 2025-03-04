@@ -11,13 +11,13 @@ namespace SportService.Implementation
     {
         private readonly HttpClient _httpClient;
         private const string BaseUrl = "https://v3.football.api-sports.io/";
-        private const string ApiKey3 = "3e5d931483d36220980032117ee6e6dd";
+        private const string ApiKey = "ba411f3495e9bf5e6032a25bd5a86a50";
 
 
         public FootballApiService(HttpClient httpClient)
         {
             _httpClient = httpClient;
-            _httpClient.DefaultRequestHeaders.Add("x-apisports-key", ApiKey3);
+            _httpClient.DefaultRequestHeaders.Add("x-apisports-key", ApiKey);
         }
         public async Task<List<Fixture>> GetFixtures(int leagueId, int season)
         {
@@ -104,28 +104,48 @@ namespace SportService.Implementation
             }
 
             var json = await response.Content.ReadAsStringAsync();
-            Console.WriteLine($"API Response: {json}");
-            var apiResponse = JsonSerializer.Deserialize<ApiFootballResponse>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-            var fixtures = apiResponse?.Response ?? new List<Fixture>();
-
-            foreach (var fixture in fixtures)
+            var options = new JsonSerializerOptions
             {
-                Console.WriteLine($"Fixture: {fixture.Id}, Timestamp: {fixture.Timestamp}");
-                if (fixture.Timestamp > 0)
+                PropertyNameCaseInsensitive = true
+            };
+
+            var apiResponse = JsonSerializer.Deserialize<SportDomain.DTO.ApiFootballResponse>(json, options);
+
+            var fixtures = new List<Fixture>();
+
+            if (apiResponse?.Response != null)
+            {
+                foreach (var apiWrapper in apiResponse.Response)
                 {
-                    fixture.Date = DateTimeOffset.FromUnixTimeSeconds(fixture.Timestamp).DateTime;
-                }
-                else
-                {
-                    fixture.Date = null;
+                    var domainFixture = new Fixture
+                    {
+                        Id = apiWrapper.Fixture.Id,
+                        Timestamp = apiWrapper.Fixture.Timestamp,
+                        Date = apiWrapper.Fixture.Date,
+                        Status = new MatchStatus
+                        {
+                            Long = apiWrapper.Fixture.Status?.Long,
+                            Short = apiWrapper.Fixture.Status?.Short,
+                             Elapsed = apiWrapper.Fixture.Status?.Elapsed
+                        },
+                        League = apiWrapper.League,
+                        Teams = apiWrapper.Teams,
+                        Goals = apiWrapper.Goals,
+                        Odds = new Odds()
+                    };
+
+                    fixtures.Add(domainFixture);
                 }
             }
 
-
             return fixtures;
         }
-        public async Task<MatchStats> GetFixtureStatistics(int fixtureId)
+
+    
+
+
+public async Task<MatchStats> GetFixtureStatistics(int fixtureId)
         {
             var response = await _httpClient.GetAsync($"{BaseUrl}fixtures/statistics?fixture={fixtureId}");
 
