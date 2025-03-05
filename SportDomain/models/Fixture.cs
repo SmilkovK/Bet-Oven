@@ -18,6 +18,9 @@ namespace SportDomain.models
         public string Name { get; set; }
         public string Type { get; set; }
         public string Logo { get; set; }
+        public string Country { get; set; }
+        public string Flag { get; set; }
+        public string Round { get; set; }
 
     }
 
@@ -38,9 +41,6 @@ namespace SportDomain.models
     {
         public int Id { get; set; }
         public DateTime? Date { get; set; }
-        public string DisplayDate => Date.HasValue
-        ? Date.Value.ToString("MMM d, HH:mm UTC")
-        : "Time TBD";
         public int Timestamp { get; set; } 
         public LeagueInfo League { get; set; }
         public MatchStatus Status { get; set; }

@@ -34,6 +34,7 @@
         padding: 1rem 1.5rem;
         display: flex;
         align-items: center;
+        justify-content: space-between;
         gap: 1rem;
     }
 
@@ -43,6 +44,24 @@
         margin: 0;
         letter-spacing: 0.5px;
     }
+
+    .league-round {
+        font-size: 1rem;
+        font-weight: 600;
+        color: white;
+        text-transform: uppercase;
+    }
+
+    .league-country {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+        .league-country img {
+            height: 20px;
+            width: auto;
+        }
 
     .match-row {
         display: grid;
@@ -111,7 +130,12 @@
         letter-spacing: 0.5px;
     }
 
-    /* Blinking LIVE Indicator */
+    .match-date {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--text-dark);
+    }
+
     .live-box {
         background: var(--live-color);
         color: white;
@@ -138,24 +162,6 @@
             opacity: 1;
         }
     }
-
-    @@media (max-width: 768px) {
-        .team-name {
-            font-size: 1rem;
-            max-width: 120px;
-        }
-
-        .team-logo {
-            height: 35px;
-            width: 35px;
-        }
-
-        .match-score {
-            font-size: 1.2rem;
-            min-width: 80px;
-            padding: 6px 16px;
-        }
-    }
 </style>
 
 <div class="container py-4">
@@ -167,13 +173,27 @@
         {
             <div class="league-section">
                 <div class="league-header">
-                    @if (!string.IsNullOrEmpty(leagueGroup.First().League?.Logo))
-                    {
-                        <img src="@leagueGroup.First().League.Logo"
-                             alt="League Logo"
-                             style="height: 35px; width: auto;">
-                    }
-                    <h2 class="league-title">@leagueGroup.Key</h2>
+                    <div class="league-info" style="display: flex; align-items: center; gap: 1rem;">
+                        @if (!string.IsNullOrEmpty(leagueGroup.First().League?.Logo))
+                        {
+                            <img src="@leagueGroup.First().League.Logo"
+                                 alt="League Logo"
+                                 style="height: 35px; width: auto;">
+                        }
+                        <h2 class="league-title">@leagueGroup.Key</h2>
+                    </div>
+
+                    <div class="league-round">
+                        <span>Round: @leagueGroup.First().League.Round</span>
+                    </div>
+
+                    <div class="league-country">
+                        @if (!string.IsNullOrEmpty(leagueGroup.First().League?.Flag))
+                        {
+                            <img src="@leagueGroup.First().League.Flag" alt="Country Flag">
+                        }
+                        <h4 style="margin: 0;"><b>@leagueGroup.First().League.Country</b></h4>
+                    </div>
                 </div>
 
                 <div class="matches-list">
@@ -207,13 +227,16 @@
                                 <div class="match-status">
                                     @if ((match.Status?.Elapsed.HasValue == true)
                                    && (match.Status?.Short == "1H" || match.Status?.Short == "2H"))
-                                    {    
+                                    {
                                         @($"{match.Status.Long} ({match.Status.Elapsed}')")
                                     }
                                     else
                                     {
                                         @match.Status?.Long
                                     }
+                                </div>
+                                <div class="match-date">
+                                    @*@match.Date.ToString("yyyy-MM-dd HH:mm")*@
                                 </div>
                             </div>
                             <div class="team away-team">
