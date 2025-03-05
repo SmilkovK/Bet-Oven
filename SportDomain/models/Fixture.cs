@@ -18,6 +18,7 @@ namespace SportDomain.models
         public string Name { get; set; }
         public string Type { get; set; }
         public string Logo { get; set; }
+
     }
 
     public class CountryInfo
@@ -37,12 +38,21 @@ namespace SportDomain.models
     {
         public int Id { get; set; }
         public DateTime? Date { get; set; }
+        public string DisplayDate => Date.HasValue
+        ? Date.Value.ToString("MMM d, HH:mm UTC")
+        : "Time TBD";
         public int Timestamp { get; set; } 
         public LeagueInfo League { get; set; }
-        public string Status { get; set; }
+        public MatchStatus Status { get; set; }
         public Teams Teams { get; set; }
         public Goals Goals { get; set; }
         public Odds Odds { get; set; }
+    }
+    public class MatchStatus
+    {
+        public string Long { get; set; }
+        public string Short { get; set; }
+        public int? Elapsed { get; set; }
     }
 
     public class Teams
@@ -62,6 +72,22 @@ namespace SportDomain.models
     {
         public int? Home { get; set; }
         public int? Away { get; set; }
+    }
+    public class MatchStats
+    {
+        public TeamStatistics Home { get; set; }
+        public TeamStatistics Away { get; set; }
+    }
+    public class TeamStatistics
+    {
+        public int ShotsOnGoal { get; set; }
+        public int ShotsOffGoal { get; set; }
+        public int TotalShots { get; set; }
+        public int Fouls { get; set; }
+        public int CornerKicks { get; set; }
+        public int Offsides { get; set; }
+        public int YellowCards { get; set; }
+        public int RedCards { get; set; }
     }
     public class LeagueResponse
     {

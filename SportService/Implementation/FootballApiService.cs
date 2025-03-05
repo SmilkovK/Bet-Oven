@@ -11,15 +11,13 @@ namespace SportService.Implementation
     {
         private readonly HttpClient _httpClient;
         private const string BaseUrl = "https://v3.football.api-sports.io/";
-        private const string ApiKey = "c26581fbcde99337cec7d73133eaad2a";
-        private const string ApiKey2 = "6aa5657eb2e9e42c02893f4617cb4a71";
-        private const string ApiKey3 = "3e5d931483d36220980032117ee6e6dd";
+        private const string ApiKey = "ba411f3495e9bf5e6032a25bd5a86a50";
 
 
         public FootballApiService(HttpClient httpClient)
         {
             _httpClient = httpClient;
-            _httpClient.DefaultRequestHeaders.Add("x-apisports-key", ApiKey3);
+            _httpClient.DefaultRequestHeaders.Add("x-apisports-key", ApiKey);
         }
         public async Task<List<Fixture>> GetFixtures(int leagueId, int season)
         {
@@ -34,7 +32,7 @@ namespace SportService.Implementation
 
             foreach (var fixture in fixtures)
             {
-                if (fixture.Timestamp > 0) 
+                if (fixture.Timestamp > 0)
                 {
                     fixture.Date = DateTimeOffset.FromUnixTimeSeconds(fixture.Timestamp).UtcDateTime;
                 }
@@ -106,19 +104,57 @@ namespace SportService.Implementation
             }
 
             var json = await response.Content.ReadAsStringAsync();
-            var apiResponse = JsonSerializer.Deserialize<ApiFootballResponse>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-            var fixtures = apiResponse?.Response ?? new List<Fixture>();
-
-            foreach (var fixture in fixtures)
+            var options = new JsonSerializerOptions
             {
-                if (fixture.Timestamp > 0) 
+                PropertyNameCaseInsensitive = true
+            };
+
+            var apiResponse = JsonSerializer.Deserialize<SportDomain.DTO.ApiFootballResponse>(json, options);
+
+            var fixtures = new List<Fixture>();
+
+            if (apiResponse?.Response != null)
+            {
+                foreach (var apiWrapper in apiResponse.Response)
                 {
-                    fixture.Date = DateTimeOffset.FromUnixTimeSeconds(fixture.Timestamp).UtcDateTime;
+                    var domainFixture = new Fixture
+                    {
+                        Id = apiWrapper.Fixture.Id,
+                        Timestamp = apiWrapper.Fixture.Timestamp,
+                        Date = apiWrapper.Fixture.Date,
+                        Status = new MatchStatus
+                        {
+                            Long = apiWrapper.Fixture.Status?.Long,
+                            Short = apiWrapper.Fixture.Status?.Short,
+                             Elapsed = apiWrapper.Fixture.Status?.Elapsed
+                        },
+                        League = apiWrapper.League,
+                        Teams = apiWrapper.Teams,
+                        Goals = apiWrapper.Goals,
+                        Odds = new Odds()
+                    };
+
+                    fixtures.Add(domainFixture);
                 }
             }
 
             return fixtures;
+        }
+
+    
+
+
+public async Task<MatchStats> GetFixtureStatistics(int fixtureId)
+        {
+            var response = await _httpClient.GetAsync($"{BaseUrl}fixtures/statistics?fixture={fixtureId}");
+
+            if (!response.IsSuccessStatusCode) return null;
+
+            var json = await response.Content.ReadAsStringAsync();
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+
+            return JsonSerializer.Deserialize<MatchStats>(json, options);
         }
         public async Task<List<Standing>> GetStandings(int leagueId, int season)
         {
@@ -145,7 +181,7 @@ namespace SportService.Implementation
 
             if (!response.IsSuccessStatusCode)
             {
-                return new Odds(); 
+                return new Odds();
             }
 
             var json = await response.Content.ReadAsStringAsync();
@@ -155,7 +191,7 @@ namespace SportService.Implementation
 
             if (oddsData == null)
             {
-                return new Odds(); 
+                return new Odds();
             }
 
             var odds = new Odds
@@ -213,4 +249,3 @@ namespace SportService.Implementation
         public List<Matches> Response { get; set; }
     }
 }
-

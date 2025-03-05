@@ -1,0 +1,44 @@
+﻿@model SportDomain.models.MatchStats
+
+@{
+    ViewData["Title"] = "Match Statistics";
+}
+
+<div class="container mt-4">
+    <h2>Match Statistics</h2>
+
+    @if (Model != null)
+    {
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <h4>Home Team</h4>
+                <ul class="list-group">
+                    <li class="list-group-item">Shots on Goal: @Model.Home.ShotsOnGoal</li>
+                    <li class="list-group-item">Total Shots: @Model.Home.TotalShots</li>
+                    <li class="list-group-item">Fouls: @Model.Home.Fouls</li>
+                    <li class="list-group-item">Corners: @Model.Home.CornerKicks</li>
+                    <li class="list-group-item">Offsides: @Model.Home.Offsides</li>
+                    <li class="list-group-item">Yellow Cards: @Model.Home.YellowCards</li>
+                </ul>
+            </div>
+
+            <div class="col-md-6">
+                <h4>Away Team</h4>
+                <ul class="list-group">
+                    <li class="list-group-item">Shots on Goal: @Model.Away.ShotsOnGoal</li>
+                    <li class="list-group-item">Total Shots: @Model.Away.TotalShots</li>
+                    <li class="list-group-item">Fouls: @Model.Away.Fouls</li>
+                    <li class="list-group-item">Corners: @Model.Away.CornerKicks</li>
+                    <li class="list-group-item">Offsides: @Model.Away.Offsides</li>
+                    <li class="list-group-item">Yellow Cards: @Model.Away.YellowCards</li>
+                </ul>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-warning mt-4">Statistics not available for this match</div>
+    }
+
+    <a href="@Url.Action("Index")" class="btn btn-secondary mt-4">Back to Live Matches</a>
+</div>
