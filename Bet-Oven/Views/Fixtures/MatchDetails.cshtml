@@ -1,44 +1,260 @@
-﻿@model SportDomain.models.MatchStats
-
+﻿@model SportDomain.models.FixtureDetailsViewModel
 @{
     ViewData["Title"] = "Match Statistics";
 }
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
-<div class="container mt-4">
-    <h2>Match Statistics</h2>
+<style>
+    body {
+        font-family: 'Roboto Condensed', sans-serif;
+        background: #f2f2f2;
+        margin: 0;
+        padding: 0;
+    }
+    .container {
+        max-width: 1200px;
+        margin: 80px auto; /* pushes the view further down */
+        padding: 0 20px;
+    }
+    .match-header {
+        background: linear-gradient(135deg, #4c6ef5, #15aabf);
+        color: #fff;
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .teams-container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+    }
+    .team {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        width: 40%;
+    }
+    /* Right team: reverse order */
+    .team.team-right {
+        flex-direction: row-reverse;
+        justify-content: flex-end;
+    }
+    .team-logo {
+        height: 80px;
+        width: 80px;
+        object-fit: contain;
+        border-radius: 50%;
+        border: 2px solid #fff;
+        background: #fff;
+        padding: 5px;
+    }
+    .team-name {
+        font-size: 1.8rem;
+        font-weight: 700;
+    }
+    .score-container {
+        text-align: center;
+        width: 20%;
+    }
+    .live-score {
+        font-size: 3rem;
+        font-weight: 700;
+    }
+    .match-status {
+        font-size: 1rem;
+        text-transform: uppercase;
+    }
+    .stats-grid {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        padding: 2rem;
+    }
+    /* New stat row layout: three columns */
+    .stat-row {
+        display: flex;
+        align-items: center;
+        padding: 1rem 0;
+        border-bottom: 1px solid #eee;
+    }
+    .stat-row:last-child {
+        border-bottom: none;
+    }
+    .stat-left,
+    .stat-center,
+    .stat-right {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    .stat-left {
+        width: 30%;
+        text-align: left;
+    }
+    .stat-center {
+        width: 40%;
+        text-align: center;
+        font-weight: 600;
+        color: #333;
+    }
+    .stat-right {
+        width: 30%;
+        text-align: right;
+    }
+    /* Progress bars inside the stat columns */
+    .progress-bar {
+        height: 10px;
+        background: #e0e0e0;
+        border-radius: 5px;
+        margin-top: 0.5rem;
+        overflow: hidden;
+    }
+    .progress-fill {
+        height: 100%;
+        background: #15aabf;
+        transition: width 0.5s ease;
+    }
+    @@media (max-width: 768px) {
+        .teams-container {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .team {
+            width: 100%;
+            justify-content: center;
+        }
+        .score-container {
+            order: -1;
+            width: 100%;
+        }
+        .stat-row {
+            flex-direction: column;
+            gap: 0.5rem;
+            text-align: center;
+        }
+        .stat-left,
+        .stat-center,
+        .stat-right {
+            width: 100%;
+            text-align: center;
+        }
+    }
+</style>
 
-    @if (Model != null)
+<div class="container">
+    @if (Model == null || Model.Fixture == null || Model.Fixture.Teams == null ||
+         Model.Fixture.Teams.Home == null || Model.Fixture.Teams.Away == null)
     {
-        <div class="row mt-4">
-            <div class="col-md-6">
-                <h4>Home Team</h4>
-                <ul class="list-group">
-                    <li class="list-group-item">Shots on Goal: @Model.Home.ShotsOnGoal</li>
-                    <li class="list-group-item">Total Shots: @Model.Home.TotalShots</li>
-                    <li class="list-group-item">Fouls: @Model.Home.Fouls</li>
-                    <li class="list-group-item">Corners: @Model.Home.CornerKicks</li>
-                    <li class="list-group-item">Offsides: @Model.Home.Offsides</li>
-                    <li class="list-group-item">Yellow Cards: @Model.Home.YellowCards</li>
-                </ul>
-            </div>
-
-            <div class="col-md-6">
-                <h4>Away Team</h4>
-                <ul class="list-group">
-                    <li class="list-group-item">Shots on Goal: @Model.Away.ShotsOnGoal</li>
-                    <li class="list-group-item">Total Shots: @Model.Away.TotalShots</li>
-                    <li class="list-group-item">Fouls: @Model.Away.Fouls</li>
-                    <li class="list-group-item">Corners: @Model.Away.CornerKicks</li>
-                    <li class="list-group-item">Offsides: @Model.Away.Offsides</li>
-                    <li class="list-group-item">Yellow Cards: @Model.Away.YellowCards</li>
-                </ul>
-            </div>
+        <div class="alert alert-warning text-center">
+            Fixture details are not available.
         </div>
     }
     else
     {
-        <div class="alert alert-warning mt-4">Statistics not available for this match</div>
-    }
+        <div class="match-header">
+            <div class="teams-container">
+                <!-- Home team on the left -->
+                <div class="team">
+                    <img src="@(Model.Fixture.Teams.Home.Logo ?? "/images/default-logo.png")" class="team-logo" alt="@(Model.Fixture.Teams.Home.Name ?? "Home Team")" />
+                    <div class="team-name">@Model.Fixture.Teams.Home.Name</div>
+                </div>
+                <!-- Score in the middle -->
+                <div class="score-container">
+                    <div class="live-score">
+                        @(Model.Fixture.Goals != null ? (Model.Fixture.Goals.Home ?? 0) : 0)
+                        -
+                        @(Model.Fixture.Goals != null ? (Model.Fixture.Goals.Away ?? 0) : 0)
+                    </div>
+                    <div class="match-status">
+                        <i class="fas fa-circle"></i> @(Model.Fixture.Status?.Short ?? "N/A")
+                    </div>
+                </div>
+                <!-- Away team on the right -->
+                <div class="team team-right">
+                    <div class="team-name">@Model.Fixture.Teams.Away.Name</div>
+                    <img src="@(Model.Fixture.Teams.Away.Logo ?? "/images/default-logo.png")" class="team-logo" alt="@(Model.Fixture.Teams.Away.Name ?? "Away Team")" />
+                </div>
+            </div>
+        </div>
 
-    <a href="@Url.Action("Index")" class="btn btn-secondary mt-4">Back to Live Matches</a>
+        @if (Model.Stats == null || Model.Stats.Response == null || !Model.Stats.Response.Any())
+        {
+            <div class="alert alert-warning text-center">
+                Statistics not available for this match.
+            </div>
+        }
+        else
+        {
+            <div class="stats-grid">
+                @{
+                    var homeStats = Model.Stats.Response.FirstOrDefault(x => x.Team.Id == Model.Fixture.Teams.Home.Id);
+                    var awayStats = Model.Stats.Response.FirstOrDefault(x => x.Team.Id == Model.Fixture.Teams.Away.Id);
+
+                    var statsToShow = new List<dynamic>
+                    {
+                        new { Name = "Shots on Goal", Home = homeStats?.Statistics.FirstOrDefault(s => s.Type == "Shots on Goal")?.Value ?? 0, Away = awayStats?.Statistics.FirstOrDefault(s => s.Type == "Shots on Goal")?.Value ?? 0 },
+                        new { Name = "Shots off Goal", Home = homeStats?.Statistics.FirstOrDefault(s => s.Type == "Shots off Goal")?.Value ?? 0, Away = awayStats?.Statistics.FirstOrDefault(s => s.Type == "Shots off Goal")?.Value ?? 0 },
+                        new { Name = "Total Shots", Home = homeStats?.Statistics.FirstOrDefault(s => s.Type == "Total Shots")?.Value ?? 0, Away = awayStats?.Statistics.FirstOrDefault(s => s.Type == "Total Shots")?.Value ?? 0 },
+                        new { Name = "Fouls", Home = homeStats?.Statistics.FirstOrDefault(s => s.Type == "Fouls")?.Value ?? 0, Away = awayStats?.Statistics.FirstOrDefault(s => s.Type == "Fouls")?.Value ?? 0 },
+                        new { Name = "Corners", Home = homeStats?.Statistics.FirstOrDefault(s => s.Type == "Corner Kicks")?.Value ?? 0, Away = awayStats?.Statistics.FirstOrDefault(s => s.Type == "Corner Kicks")?.Value ?? 0 },
+                        // Additional stats
+                        new { Name = "Yellow Cards", Home = homeStats?.Statistics.FirstOrDefault(s => s.Type == "Yellow Cards")?.Value ?? 0, Away = awayStats?.Statistics.FirstOrDefault(s => s.Type == "Yellow Cards")?.Value ?? 0 },
+                        new { Name = "Red Cards", Home = homeStats?.Statistics.FirstOrDefault(s => s.Type == "Red Cards")?.Value ?? 0, Away = awayStats?.Statistics.FirstOrDefault(s => s.Type == "Red Cards")?.Value ?? 0 },
+                        new { Name = "Offsides", Home = homeStats?.Statistics.FirstOrDefault(s => s.Type == "Offsides")?.Value ?? 0, Away = awayStats?.Statistics.FirstOrDefault(s => s.Type == "Offsides")?.Value ?? 0 }
+                    };
+                }
+
+                @foreach (var stat in statsToShow)
+                {
+                    int homeValue = 0;
+                    int awayValue = 0;
+
+                    if (stat.Home is System.Text.Json.JsonElement homeElem && homeElem.ValueKind == System.Text.Json.JsonValueKind.Number)
+                    {
+                        homeValue = homeElem.GetInt32();
+                    }
+                    else
+                    {
+                        homeValue = Convert.ToInt32(stat.Home);
+                    }
+
+                    if (stat.Away is System.Text.Json.JsonElement awayElem && awayElem.ValueKind == System.Text.Json.JsonValueKind.Number)
+                    {
+                        awayValue = awayElem.GetInt32();
+                    }
+                    else
+                    {
+                        awayValue = Convert.ToInt32(stat.Away);
+                    }
+
+                    int total = homeValue + awayValue;
+                    int homePercentage = total > 0 ? (homeValue * 100) / total : 50;
+                    int awayPercentage = total > 0 ? (awayValue * 100) / total : 50;
+                    <div class="stat-row">
+                        <div class="stat-left">
+                            <div class="stat-value">@homeValue</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: @homePercentage%"></div>
+                            </div>
+                        </div>
+                        <div class="stat-center">
+                            <div class="stat-name">@stat.Name</div>
+                        </div>
+                        <div class="stat-right">
+                            <div class="stat-value">@awayValue</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: @awayPercentage%"></div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    }
 </div>

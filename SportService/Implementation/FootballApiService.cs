@@ -141,21 +141,28 @@ namespace SportService.Implementation
 
             return fixtures;
         }
+        public async Task<Fixture> GetFixtureById(int fixtureId)
+        {
+            var response = await _httpClient.GetAsync($"{BaseUrl}fixtures?id={fixtureId}");
+            if (!response.IsSuccessStatusCode) return null;
 
-    
-
-
-public async Task<MatchStats> GetFixtureStatistics(int fixtureId)
+            var json = await response.Content.ReadAsStringAsync();
+            var apiResponse = JsonSerializer.Deserialize<ApiFootballFixturesResponse>(json,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            return apiResponse?.Response?.FirstOrDefault();
+        }
+        public async Task<SportDomain.DTO.ApiStatsResponse> GetFixtureStatistics(int fixtureId)
         {
             var response = await _httpClient.GetAsync($"{BaseUrl}fixtures/statistics?fixture={fixtureId}");
-
             if (!response.IsSuccessStatusCode) return null;
 
             var json = await response.Content.ReadAsStringAsync();
             var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
 
-            return JsonSerializer.Deserialize<MatchStats>(json, options);
+            var statsResponse = JsonSerializer.Deserialize<SportDomain.DTO.ApiStatsResponse>(json, options);
+            return statsResponse;
         }
+
         public async Task<List<Standing>> GetStandings(int leagueId, int season)
         {
             var response = await _httpClient.GetAsync(

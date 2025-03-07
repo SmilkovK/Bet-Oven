@@ -35,6 +35,26 @@ namespace Bet_Oven.Controllers.API
             var fixtures = await _footballApiService.GetFixtures(leagueId, season);
             return Ok(fixtures);
         }
+        [HttpGet("{fixtureId}/stats")]
+        public async Task<ActionResult<SportDomain.DTO.ApiStatsResponse>> GetMatchStats(int fixtureId)
+        {
+            var statsResponse = await _footballApiService.GetFixtureStatistics(fixtureId);
+            if (statsResponse == null || statsResponse.Response == null || !statsResponse.Response.Any())
+            {
+                return NotFound();
+            }
+            return Ok(statsResponse);
+        }
+        [HttpGet("fixture/{fixtureId}")]
+        public async Task<ActionResult<Fixture>> GetFixtureById(int fixtureId)
+        {
+            var fixture = await _footballApiService.GetFixtureById(fixtureId);
+            if (fixture == null)
+            {
+                return NotFound();
+            }
+            return Ok(fixture);
+        }
 
     }
 }
