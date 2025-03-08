@@ -7,55 +7,323 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Bet_Oven.styles.css" asp-append-version="true" />
+    <!-- Modern font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <style>
+        /* Base styling */
+        :root {
+            --primary-dark: #0f172a;
+            --primary-medium: #1e293b;
+            --primary-light: #334155;
+            --accent: #3b82f6;
+            --accent-hover: #60a5fa;
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --success: #22c55e;
+            --border-radius-sm: 8px;
+            --border-radius-md: 12px;
+            --border-radius-lg: 16px;
+            --shadow-sm: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 10px 15px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+            --sidebar-width: 220px;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--primary-dark);
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+
+        /* Header styling */
+        .navbar-main {
+            background: linear-gradient(135deg, #1e40af, #3b82f6);
+            padding: 15px 0;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+            letter-spacing: -0.5px;
+        }
+
+        .navbar-main .nav-link {
+            color: white;
+            font-weight: 500;
+            margin: 0 15px;
+            padding: 8px 16px;
+            border-radius: var(--border-radius-sm);
+            transition: var(--transition);
+        }
+
+            .navbar-main .nav-link:hover {
+                background-color: rgba(255, 255, 255, 0.2);
+                transform: translateY(-2px);
+            }
+
+        /* Secondary nav */
+        .navbar-secondary {
+            background-color: var(--primary-medium);
+            padding: 10px 0;
+            position: sticky;
+            top: 0;
+            z-index: 999;
+            box-shadow: var(--shadow-sm);
+        }
+
+            .navbar-secondary .nav-link {
+                color: var(--text-primary);
+                font-weight: 500;
+                margin: 0 10px;
+                padding: 8px 20px;
+                border-radius: var(--border-radius-sm);
+                transition: var(--transition);
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+                .navbar-secondary .nav-link i {
+                    font-size: 1.1rem;
+                }
+
+                .navbar-secondary .nav-link.active {
+                    background: linear-gradient(135deg, #1e40af, #3b82f6);
+                    color: white;
+                    box-shadow: var(--shadow-sm);
+                }
+
+                .navbar-secondary .nav-link:hover:not(.active) {
+                    background-color: var(--primary-light);
+                    transform: translateY(-2px);
+                }
+
+        /* Sidebar hover trigger area */
+        .sidebar-trigger {
+            position: fixed;
+            left: 0;
+            top: 120px;
+            width: 10px;
+            height: calc(100vh - 120px);
+            z-index: 997;
+            background-color: transparent;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 120px;
+            width: var(--sidebar-width);
+            background: linear-gradient(180deg, var(--primary-medium), var(--primary-dark));
+            padding: 25px 0;
+            height: calc(100vh - 120px);
+            overflow-y: auto;
+            z-index: 998;
+            box-shadow: var(--shadow-sm);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s ease-out;
+            transform: translateX(-100%); /* Hidden by default */
+        }
+
+            /* Show sidebar when hover trigger is hovered */
+            .sidebar-trigger:hover + .sidebar,
+            .sidebar:hover {
+                transform: translateX(0); /* Slide to the right when triggered */
+            }
+
+            .sidebar .nav-item {
+                margin: 5px 15px;
+            }
+
+            .sidebar .nav-link {
+                color: var(--text-primary);
+                font-weight: 500;
+                padding: 12px 20px;
+                border-radius: var(--border-radius-sm);
+                transition: var(--transition);
+                display: block;
+            }
+
+                .sidebar .nav-link:hover {
+                    background-color: var(--primary-light);
+                    transform: translateX(5px);
+                }
+
+                .sidebar .nav-link.active {
+                    background: linear-gradient(135deg, #1e40af, #3b82f6);
+                    color: white;
+                    box-shadow: var(--shadow-sm);
+                }
+
+        /* Main content - always full width */
+        .container {
+            padding: 30px;
+            margin-top: 16px;
+            max-width: none;
+            width: 100%;
+            margin-left: 0;
+            transition: margin-left 0.3s ease-out;
+        }
+
+        /* Card styling */
+        .card {
+            border: none;
+            border-radius: var(--border-radius-md);
+            background: var(--primary-medium);
+            box-shadow: var(--shadow-md);
+            margin-bottom: 20px;
+            overflow: hidden;
+            transition: var(--transition);
+        }
+
+            .card:hover {
+                transform: translateY(-5px);
+                box-shadow: var(--shadow-md);
+            }
+
+        .card-body {
+            padding: 25px;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+        }
+
+        .card-text {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Buttons */
+        .btn-primary {
+            background: linear-gradient(135deg, #1e40af, #3b82f6);
+            border: none;
+            border-radius: var(--border-radius-sm);
+            padding: 10px 20px;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+            .btn-primary:hover {
+                transform: translateY(-2px);
+                box-shadow: var(--shadow-sm);
+                background: linear-gradient(135deg, #2563eb, #60a5fa);
+            }
+
+        /* Hide mobile menu toggle since we're using hover */
+        .mobile-menu-toggle {
+            display: none;
+        }
+    </style>
 </head>
 <body>
+    <!-- Main Header -->
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+        <nav class="navbar navbar-main navbar-expand-sm navbar-toggleable-sm">
             <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Bet_Oven</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Fixtures" asp-action="Index">LiveMatches</a>
-                        </li
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="AllLeagues" asp-action="Index">Leagues</a>
-                        </li>
-                        <div >
+                <!-- Left: Site Name -->
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">
+                    <i class="fas fa-fire-flame-curved me-2"></i>Bet_Oven
+                </a>
 
-                        @if (User.Identity.IsAuthenticated)
-                        {
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    Total Virtual Currency: @ViewBag.TotalCurrency <span class="caret"></span>
-                                </a>
-                                <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                                    <li><a class="nav-link text-dark" asp-area="" asp-controller="VirtualCurrencies" asp-action="Index">History</a></li>
-                                </ul>
-                            </li>
-                        }
-                        </div>
+                <!-- Middle: Links -->
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-center">
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="FeelingLucky">
+                                <i class="fas fa-dice me-1"></i> Feeling Lucky?
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="MyBets">
+                                <i class="fas fa-receipt me-1"></i> My Bets
+                            </a>
+                        </li>
                     </ul>
-                    <partial name="_LoginPartial" />
                 </div>
+
+                <!-- Right: Login Partial -->
+                <partial name="_LoginPartial" />
+            </div>
+        </nav>
+
+        <!-- Secondary Header -->
+        <nav class="navbar navbar-secondary navbar-expand-sm navbar-toggleable-sm">
+            <div class="container-fluid d-flex justify-content-center">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link active" id="football-link" href="#">
+                            <i class="fas fa-futbol"></i> Football
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="basketball-link" href="#">
+                            <i class="fas fa-basketball-ball"></i> Basketball
+                        </a>
+                    </li>
+                </ul>
             </div>
         </nav>
     </header>
+
+    <!-- Hover trigger area for sidebar -->
+    <div class="sidebar-trigger"></div>
+
+    <!-- Left Sidebar -->
+    <div class="sidebar">
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link active" asp-area="" asp-controller="AllLeagues" asp-action="Index">
+                    <i class="fas fa-trophy me-2"></i> Leagues
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" asp-area="" asp-controller="Fixtures" asp-action="Index">
+                    <i class="fas fa-bolt me-2"></i> Live Matches
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
     <div class="container">
         <main role="main" class="pb-3">
             @RenderBody()
         </main>
     </div>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+
+    <script>
+        // Add active class to current page in sidebar
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPath = window.location.pathname;
+            const sidebarLinks = document.querySelectorAll('.sidebar .nav-link');
+
+            sidebarLinks.forEach(link => {
+                if (link.getAttribute('href') === currentPath) {
+                    link.classList.add('active');
+                } else {
+                    link.classList.remove('active');
+                }
+            });
+        });
+    </script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
