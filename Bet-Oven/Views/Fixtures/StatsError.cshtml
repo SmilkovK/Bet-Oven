@@ -1,0 +1,10 @@
+﻿@model SportDomain.ErrorViewModel
+@{
+    ViewData["Title"] = "Statistics Error";
+}
+
+<div class="container py-5">
+    <h2 class="text-danger">Statistics Unavailable</h2>
+    <p>@Model.Message</p>
+    <p>Request ID: @Model.RequestId</p>
+</div>

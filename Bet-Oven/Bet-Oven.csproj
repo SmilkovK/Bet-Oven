@@ -10,6 +10,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Remove="Views\Fixtures\StatsError.cshtml" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="8.0.3" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.3" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="8.0.11" />
@@ -33,6 +37,18 @@
   <ItemGroup>
     <ProjectReference Include="..\SportRepository\SportRepository.csproj" />
     <ProjectReference Include="..\SportService\SportService.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <UpToDateCheckInput Remove="Views\Fixtures\StatsError.cshtml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <_ContentIncludedByDefault Remove="Views\Fixtures\StatsError.cshtml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Views\Fixtures\StatsError.cshtml" />
   </ItemGroup>
 
 </Project>

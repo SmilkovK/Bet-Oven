@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using SportDomain.models;
 using SportDomain;
 using System.Diagnostics;
+using SportDomain.DTO;
 
 namespace Bet_Oven.Controllers
 {
@@ -34,41 +35,37 @@ namespace Bet_Oven.Controllers
         }
         public async Task<IActionResult> MatchDetails(int fixtureId)
         {
-            try
+            var fixtureResponse = await _httpClient.GetAsync($"http://localhost:5202/api/live-matches/fixture/{fixtureId}");
+            if (!fixtureResponse.IsSuccessStatusCode)
             {
-                if (fixtureId <= 0)
-                {
-                    return RedirectToAction("Error", "Home", new { message = "Invalid match ID" });
-                }
-
-                var response = await _httpClient.GetAsync($"http://localhost:5202/api/live-matches/{fixtureId}/stats");
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    return View("StatsError", new ErrorViewModel
-                    {
-                        RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier,
-                        Message = "Statistics unavailable for this match"
-                    });
-                }
-
-                var json = await response.Content.ReadAsStringAsync();
-
-                Console.WriteLine($"API Response: {json}");
-
-                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                var stats = JsonSerializer.Deserialize<MatchStats>(json, options) ?? new MatchStats();
-
-                if (stats.Home == null) stats.Home = new TeamStatistics();
-                if (stats.Away == null) stats.Away = new TeamStatistics();
-
-                return View(stats);
+                return NotFound();
             }
-            catch (Exception ex)
+
+            var fixtureJson = await fixtureResponse.Content.ReadAsStringAsync();
+            var fixture = JsonSerializer.Deserialize<Fixture>(fixtureJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            if (fixture == null)
             {
-                Console.WriteLine($"Error fetching stats: {ex}");
-                return RedirectToAction("Error", "Home", new { message = "Failed to load match details" });
+                return NotFound();
             }
+
+            var statsResponse = await _httpClient.GetAsync($"http://localhost:5202/api/live-matches/{fixtureId}/stats");
+            var stats = statsResponse.IsSuccessStatusCode
+                ? JsonSerializer.Deserialize<ApiStatsResponse>(await statsResponse.Content.ReadAsStringAsync(),
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+                : null;
+
+            var viewModel = new FixtureDetailsViewModel
+            {
+                Fixture = fixture,
+                Stats = stats
+            };
+
+            return View(viewModel);
         }
+
+
+
+
     }
 }

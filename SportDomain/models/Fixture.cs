@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SportDomain.DTO;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -18,6 +19,9 @@ namespace SportDomain.models
         public string Name { get; set; }
         public string Type { get; set; }
         public string Logo { get; set; }
+        public string Country { get; set; }
+        public string Flag { get; set; }
+        public string Round { get; set; }
 
     }
 
@@ -38,9 +42,6 @@ namespace SportDomain.models
     {
         public int Id { get; set; }
         public DateTime? Date { get; set; }
-        public string DisplayDate => Date.HasValue
-        ? Date.Value.ToString("MMM d, HH:mm UTC")
-        : "Time TBD";
         public int Timestamp { get; set; } 
         public LeagueInfo League { get; set; }
         public MatchStatus Status { get; set; }
@@ -54,7 +55,11 @@ namespace SportDomain.models
         public string Short { get; set; }
         public int? Elapsed { get; set; }
     }
-
+    public class FixtureDetailsViewModel
+    {
+        public Fixture Fixture { get; set; }
+        public ApiStatsResponse Stats { get; set; }
+    }
     public class Teams
     {
         public TeamInfo Home { get; set; }
@@ -88,6 +93,16 @@ namespace SportDomain.models
         public int Offsides { get; set; }
         public int YellowCards { get; set; }
         public int RedCards { get; set; }
+    }
+    public class TeamStatisticItem
+    {
+        public string Type { get; set; }
+        public object Value { get; set; }
+    }
+    public class TeamStatResponse
+    {
+        public TeamInfo Team { get; set; }
+        public List<TeamStatisticItem> Statistics { get; set; }
     }
     public class LeagueResponse
     {
