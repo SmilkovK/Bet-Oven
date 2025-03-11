@@ -1,4 +1,5 @@
-﻿using SportDomain.DTO;
+﻿using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
+using SportDomain.DTO;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -38,6 +39,13 @@ namespace SportDomain.models
         public string End { get; set; }
         public bool Current { get; set; }
     }
+    public class Test
+    {
+        public Fixture Fixture { get; set; }
+        public LeagueInfo League { get; set; }
+        public Teams Teams { get; set; }
+        public Goals Goals { get; set; }
+    }
     public class Fixture
     {
         public int Id { get; set; }
@@ -47,7 +55,7 @@ namespace SportDomain.models
         public MatchStatus Status { get; set; }
         public Teams Teams { get; set; }
         public Goals Goals { get; set; }
-        public Odds Odds { get; set; }
+        public OddsInfo Odds { get; set; }
     }
     public class MatchStatus
     {
@@ -137,7 +145,7 @@ namespace SportDomain.models
     }
     public class OddsResponse
     {
-        public List<Bookmaker> Bookmakers { get; set; }
+        public List<OddsInfo> OddsInfos { get; set; }
     }
 
     public class Odds
@@ -164,4 +172,13 @@ namespace SportDomain.models
         public string Value { get; set; }
         public double Odd { get; set; }
     }
+    public class OddsInfo
+    {
+        public LeagueInfo League { get; set; }
+        public List<Bookmaker> Bookmakers { get; set; }
+        public Fixture Fixture { get; set; }
+        public string Update {  get; set; }
+
+    }
+
 }

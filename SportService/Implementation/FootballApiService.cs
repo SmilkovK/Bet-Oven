@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using SportDomain.models;
 using JsonSerializer = System.Text.Json.JsonSerializer;
+using SportDomain.DTO;
 
 namespace SportService.Implementation
 {
@@ -127,12 +128,12 @@ namespace SportService.Implementation
                         {
                             Long = apiWrapper.Fixture.Status?.Long,
                             Short = apiWrapper.Fixture.Status?.Short,
-                             Elapsed = apiWrapper.Fixture.Status?.Elapsed
+                            Elapsed = apiWrapper.Fixture.Status?.Elapsed
                         },
                         League = apiWrapper.League,
                         Teams = apiWrapper.Teams,
                         Goals = apiWrapper.Goals,
-                        Odds = new Odds()
+                        Odds = new OddsInfo()
                     };
 
                     fixtures.Add(domainFixture);
@@ -151,6 +152,50 @@ namespace SportService.Implementation
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
             return apiResponse?.Response?.FirstOrDefault();
         }
+        /*public async Task<Fixture> GetFixtureById(int fixtureId)
+        {
+            var response = await _httpClient.GetAsync($"{BaseUrl}fixtures?id={fixtureId}");
+            if (!response.IsSuccessStatusCode) return null;
+
+            var json = await response.Content.ReadAsStringAsync();
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+
+            var apiResponse = JsonSerializer.Deserialize<ApiFootballResponse>(json, options);
+            var apiWrapper = apiResponse?.Response?.FirstOrDefault();
+
+            if (apiWrapper == null) return null;
+
+            return new Fixture
+            {
+                Id = apiWrapper.Fixture.Id,
+                Timestamp = apiWrapper.Fixture.Timestamp,
+                Date = apiWrapper.Fixture.Date,
+                Status = new MatchStatus
+                {
+                    Long = apiWrapper.Fixture.Status?.Long,
+                    Short = apiWrapper.Fixture.Status?.Short,
+                    Elapsed = apiWrapper.Fixture.Status?.Elapsed
+                },
+                League = apiWrapper.League,
+                Teams = new Teams
+                {
+                    Home = new TeamInfo
+                    {
+                        Id = apiWrapper.Teams.Home.Id,
+                        Name = apiWrapper.Teams.Home.Name,
+                        Logo = apiWrapper.Teams.Home.Logo
+                    },
+                    Away = new TeamInfo
+                    {
+                        Id = apiWrapper.Teams.Away.Id,
+                        Name = apiWrapper.Teams.Away.Name,
+                        Logo = apiWrapper.Teams.Away.Logo
+                    }
+                },
+                Goals = apiWrapper.Goals,
+                Odds = await GetOdds(apiWrapper.Fixture.Id)
+            };
+        }*/
         public async Task<SportDomain.DTO.ApiStatsResponse> GetFixtureStatistics(int fixtureId)
         {
             var response = await _httpClient.GetAsync($"{BaseUrl}fixtures/statistics?fixture={fixtureId}");
@@ -182,52 +227,52 @@ namespace SportService.Implementation
                 ?.FirstOrDefault()
                 ?? new List<Standing>();
         }
-        public async Task<Odds> GetOdds(int fixtureId)
+        public async Task<OddsInfo> GetOdds(int fixtureId)
         {
             var response = await _httpClient.GetAsync($"{BaseUrl}odds?fixture={fixtureId}&bookmaker=8");
 
             if (!response.IsSuccessStatusCode)
             {
-                return new Odds();
+                return new OddsInfo();
             }
 
             var json = await response.Content.ReadAsStringAsync();
-            var apiResponse = JsonSerializer.Deserialize<ApiFootballOddsResponse>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-            var oddsData = apiResponse?.Response?.FirstOrDefault();
-
-            if (oddsData == null)
+            var apiResponse = JsonSerializer.Deserialize<ApiFootballOddsResponseDTO>(
+                json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var oddsDataDTO = apiResponse?.Response?.FirstOrDefault();
+            if (oddsDataDTO == null)
             {
-                return new Odds();
+                return new OddsInfo();
             }
 
-            var odds = new Odds
-            {
-                Bookmakers = oddsData.Bookmakers
-                    .Select(b => new Bookmaker
-                    {
-                        Id = b.Id,
-                        Name = b.Name,
-                        Bets = b.Bets
-                            .Select(bet => new Bet
-                            {
-                                Name = bet.Name,
-                                Values = bet.Values
-                                    .Select(v => new BetValue
-                                    {
-                                        Value = v.Value,
-                                        Odd = v.Odd
-                                    }).ToList()
-                            }).ToList()
-                    }).ToList()
-            };
 
+            var odds = new OddsInfo
+            {
+                League = oddsDataDTO.League,
+                Fixture = oddsDataDTO.Fixture,
+                Update = oddsDataDTO.Update,
+                Bookmakers = oddsDataDTO.Bookmakers.Select(b => new Bookmaker
+                {
+                    Id = b.Id,
+                    Name = b.Name,
+                    Bets = b.Bets.Select(bet => new Bet
+                    {
+                        Id = bet.Id,
+                        Name = bet.Name,
+                        Values = bet.Values.Select(v => new BetValue
+                        {
+                            Value = v.Value,
+                            Odd = double.TryParse(v.Odd, out double parsedOdd) ? parsedOdd : 0.0
+                        }).ToList()
+                    }).ToList()
+                }).ToList()
+            };
             return odds;
         }
     }
     public class ApiFootballOddsResponse
     {
-        public List<OddsResponse> Response { get; set; }
+        public List<OddsInfo> Response { get; set; }
     }
     public class ApiFootballStandingsResponse
     {
@@ -244,10 +289,6 @@ namespace SportService.Implementation
     }
 
     public class ApiFootballFixturesResponse
-    {
-        public List<Fixture> Response { get; set; }
-    }
-    public class ApiFootballResponse
     {
         public List<Fixture> Response { get; set; }
     }

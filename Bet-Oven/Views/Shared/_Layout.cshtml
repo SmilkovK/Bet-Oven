@@ -7,12 +7,9 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Bet_Oven.styles.css" asp-append-version="true" />
-    <!-- Modern font -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     <style>
-        /* Base styling */
         :root {
             --primary-dark: #0f172a;
             --primary-medium: #1e293b;
@@ -40,7 +37,6 @@
             overflow-x: hidden;
         }
 
-        /* Header styling */
         .navbar-main {
             background: linear-gradient(135deg, #1e40af, #3b82f6);
             padding: 15px 0;
@@ -68,7 +64,6 @@
                 transform: translateY(-2px);
             }
 
-        /* Secondary nav */
         .navbar-secondary {
             background-color: var(--primary-medium);
             padding: 10px 0;
@@ -105,7 +100,6 @@
                     transform: translateY(-2px);
                 }
 
-        /* Sidebar hover trigger area */
         .sidebar-trigger {
             position: fixed;
             left: 0;
@@ -116,7 +110,6 @@
             background-color: transparent;
         }
 
-        /* Sidebar */
         .sidebar {
             position: fixed;
             left: 0;
@@ -130,13 +123,12 @@
             box-shadow: var(--shadow-sm);
             border-right: 1px solid rgba(255, 255, 255, 0.1);
             transition: transform 0.3s ease-out;
-            transform: translateX(-100%); /* Hidden by default */
+            transform: translateX(-100%);
         }
 
-            /* Show sidebar when hover trigger is hovered */
             .sidebar-trigger:hover + .sidebar,
             .sidebar:hover {
-                transform: translateX(0); /* Slide to the right when triggered */
+                transform: translateX(0);
             }
 
             .sidebar .nav-item {
@@ -163,7 +155,6 @@
                     box-shadow: var(--shadow-sm);
                 }
 
-        /* Main content - always full width */
         .container {
             padding: 30px;
             margin-top: 16px;
@@ -206,7 +197,6 @@
             line-height: 1.6;
         }
 
-        /* Buttons */
         .btn-primary {
             background: linear-gradient(135deg, #1e40af, #3b82f6);
             border: none;
@@ -222,7 +212,6 @@
                 background: linear-gradient(135deg, #2563eb, #60a5fa);
             }
 
-        /* Hide mobile menu toggle since we're using hover */
         .mobile-menu-toggle {
             display: none;
         }
