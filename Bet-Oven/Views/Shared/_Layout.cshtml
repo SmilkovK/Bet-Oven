@@ -226,6 +226,36 @@
         .mobile-menu-toggle {
             display: none;
         }
+
+        .sidebar-toggle-btn {
+            position: fixed;
+            left: 0;
+            top: 300px;
+            width: 25px;
+            height: 40px;
+            background-color: var(--primary-medium);
+            border: none;
+            border-radius: 0 var(--border-radius-sm) var(--border-radius-sm) 0;
+            color: var(--text-secondary);
+            cursor: default;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 996;
+            box-shadow: var(--shadow-sm);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+            .sidebar-toggle-btn i {
+                font-size: 0.85rem;
+            }
+
+            /* Make the toggle button slightly more visible on hover */
+            .sidebar-toggle-btn:hover {
+                color: var(--text-primary);
+            }
     </style>
 </head>
 <body>
@@ -296,6 +326,9 @@
             </li>
         </ul>
     </div>
+    <button class="sidebar-toggle-btn">
+        <i class="fas fa-chevron-right"></i>
+    </button>
 
     <!-- Main Content -->
     <div class="container">
