@@ -1,6 +1,5 @@
 ﻿@model SportDomain.models.LeagueMatchesViewModel
 <div class="dashboard-container">
-    <!-- Leagues sidebar -->
     <aside class="leagues-sidebar">
         <div class="sidebar-header">
             <h2>Leagues</h2>
@@ -64,7 +63,6 @@
         }
     </aside>
 
-    <!-- Matches main content -->
     <main class="matches-container">
         <div class="matches-header">
             <div class="league-info">
@@ -269,14 +267,13 @@
                     hour12: true
                 });
 
-                let bet365 = fixture.odds?.bookmakers?.find(b => b.id === '8');
-                let matchWinnerOdds = bet365?.bets?.find(bet => bet.id === '1');
+                let bet365 = fixture.odds?.bookmakers?.find(b => b.id === 8);
+                let matchWinnerOdds = bet365?.bets?.find(bet => bet.id === 1);
 
                 let homeWin = matchWinnerOdds?.values?.find(v => v.value === "Home")?.odd ?? 'N/A';
                 let draw = matchWinnerOdds?.values?.find(v => v.value === "Draw")?.odd ?? 'N/A';
                 let awayWin = matchWinnerOdds?.values?.find(v => v.value === "Away")?.odd ?? 'N/A';
 
-                // Format odds based on user preference
                 if (currentOddsFormat !== 'decimal') {
                     homeWin = formatOdds(homeWin, currentOddsFormat);
                     draw = formatOdds(draw, currentOddsFormat);
@@ -284,12 +281,13 @@
                 }
 
                 const isLive = fixture.status?.short === 'LIVE';
+                const elapsed = fixture.status?.elapsed ?? 0;
                 const hasStarted = new Date(fixture.date) < new Date();
 
                 return `
                     <div class='match-card ${isLive ? 'live-match' : ''} ${hasStarted ? 'started' : ''}'>
                         <div class="match-time ${isLive ? 'live' : ''}">
-                            ${isLive ? '<span class="live-indicator">LIVE</span>' : matchTime}
+                                ${isLive ? `<span class="live-indicator">LIVE ${elapsed}'</span>` : matchTime}
                         </div>
 
                         <div class="team home-team">
@@ -324,7 +322,7 @@
             }).join("");
 
             matchContainer.innerHTML = matchesHtml;
-        }, 500); // Simulate loading for better UX
+        }, 500);
     }
 
     function formatOdds(odds, format) {
@@ -427,12 +425,10 @@
                     starIcon.classList.toggle("active", data.favoriteLeagues.includes(pendingFavoriteAction));
                     leagueCard.classList.toggle("is-favorite", data.favoriteLeagues.includes(pendingFavoriteAction));
 
-                    // Update title attribute
                     starIcon.setAttribute('title', data.favoriteLeagues.includes(pendingFavoriteAction) ?
                         'Remove from favorites' : 'Add to favorites');
                 }
 
-                // Show success toast
                 showToast(
                     isFavorite ?
                     `${leagueName} removed from favorites` :
@@ -440,7 +436,6 @@
                     'success'
                 );
 
-                // If "show favorites only" is active, we might need to hide this league
                 const showFavoritesOnly = document.getElementById('show-favorites-only').classList.contains('active');
                 if (showFavoritesOnly && !data.favoriteLeagues.includes(pendingFavoriteAction)) {
                     leagueCard.classList.add('hidden');
@@ -472,13 +467,10 @@
 
         const container = document.getElementById('toast-container');
         container.appendChild(toast);
-
-        // Animate
         setTimeout(() => {
             toast.classList.add('show');
         }, 10);
 
-        // Auto remove
         setTimeout(() => {
             toast.classList.remove('show');
             setTimeout(() => {
@@ -487,19 +479,14 @@
         }, 3000);
     }
 
-    // Placeholder for bet placement
     function placeBet(fixtureId, type, odds) {
         showToast(`Bet ${type} placed on match #${fixtureId} with odds ${odds}`, 'success');
-        // Actual implementation would go here
-    }
+            }
 
-    // Placeholder for more odds
     function showMoreOdds(fixtureId) {
         showToast(`More betting options for match #${fixtureId}`, 'info');
-        // Actual implementation would go here
     }
 
-    // Refresh matches button
     document.getElementById('refresh-matches').addEventListener('click', function() {
         const activeLeague = document.querySelector('.league-card.selected');
 
@@ -521,7 +508,6 @@
 </script>
 
 <style>
-    /* Base styles and reset */
     * {
         margin: 0;
         padding: 0;
@@ -530,21 +516,17 @@
     }
 
     :root {
-        /* Primary colors */
         --primary-color: #3a86ff;
         --primary-light: #4895ef;
         --primary-dark: #2563eb;
         --primary-hover: #2563eb;
-        /* Background colors */
         --bg-dark: #0f172a;
         --bg-medium: #1e293b;
         --bg-light: #334155;
         --bg-hover: #1e293b;
-        /* Text colors */
         --text-light: #f8fafc;
         --text-medium: #cbd5e1;
         --text-dim: #94a3b8;
-        /* Accent colors */
         --accent-success: #10b981;
         --accent-warning: #f59e0b;
         --accent-danger: #ef4444;
@@ -592,7 +574,6 @@
         box-shadow: var(--shadow-lg);
     }
 
-    /* Leagues sidebar */
     .leagues-sidebar {
         width: 330px;
         background-color: var(--bg-medium);
@@ -786,7 +767,6 @@
         letter-spacing: 0.3px;
     }
 
-    /* Empty states */
     .empty-state {
         display: flex;
         flex-direction: column;
@@ -822,7 +802,6 @@
             transform: translateY(-2px);
         }
 
-    /* Matches container */
     .matches-container {
         flex: 1;
         display: flex;
@@ -1076,7 +1055,6 @@
             opacity: 0.7;
         }
 
-    /* Modal styles */
     .modal-overlay {
         position: fixed;
         top: 0;

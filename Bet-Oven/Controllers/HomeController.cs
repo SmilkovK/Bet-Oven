@@ -52,7 +52,9 @@ namespace Bet_Oven.Controllers
             var viewModel = new LeagueMatchesViewModel
             {
                 Leagues = leagues,
-                FixturesGroupedByLeague = fixturesGroupedByLeague,
+                FixturesGroupedByLeague = fixtures
+                .GroupBy(f => f.League.Id)
+                .ToDictionary(g => g.Key, g => g.ToList()),
                 FavoriteLeagues = new HashSet<int>(_favoriteService.GetFavoriteLeagues(userId))
             };
             viewModel.Leagues = viewModel.Leagues.OrderByDescending(l => favoriteLeagues.Contains(l.League.Id)).ToList();
@@ -176,11 +178,6 @@ namespace Bet_Oven.Controllers
             var updatedFavorites = favoriteService.GetFavoriteLeagues(userId);
 
             return Json(new { success = true, favoriteLeagues = updatedFavorites });
-        }
-
-        public IActionResult Privacy()
-        {
-            return View();
         }
     }
 }

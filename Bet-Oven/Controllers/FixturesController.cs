@@ -63,9 +63,5 @@ namespace Bet_Oven.Controllers
 
             return View(viewModel);
         }
-
-
-
-
     }
 }

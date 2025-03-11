@@ -55,6 +55,5 @@ namespace Bet_Oven.Controllers.API
             }
             return Ok(fixture);
         }
-
     }
 }
