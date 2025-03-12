@@ -1,9 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
+using SportDomain.Converters;
 using SportDomain.DTO;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace SportDomain.models
@@ -169,8 +171,11 @@ namespace SportDomain.models
 
     public class BetValue
     {
+        [JsonConverter(typeof(StringOrNumberConverter))]
         public string Value { get; set; }
-        public double Odd { get; set; }
+
+        [JsonConverter(typeof(OddConverter))]
+        public decimal? Odd { get; set; }
     }
     public class OddsInfo
     {

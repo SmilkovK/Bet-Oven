@@ -227,7 +227,7 @@
         });
     }
 
-    function showMatches(leagueId, leagueName) {
+            function showMatches(leagueId, leagueName) {
         console.log("Loading matches for:", leagueName);
 
         let leagueNameElement = document.getElementById("league-name");
@@ -246,6 +246,7 @@
         document.querySelector(`.league-card[data-league-id="${leagueId}"]`).classList.add('selected');
 
         let fixtures = @Html.Raw(Json.Serialize(Model.FixturesGroupedByLeague));
+        console.log("Fixtures Data:", fixtures);
 
         setTimeout(() => {
             document.getElementById('loading-overlay').classList.add('hidden');
@@ -261,19 +262,37 @@
             }
 
             let matchesHtml = fixtures[leagueId].map(fixture => {
+                console.log("Fixture data:", fixture);
+
                 const matchTime = new Date(fixture.date).toLocaleTimeString([], {
                     hour: '2-digit',
                     minute: '2-digit',
                     hour12: true
                 });
 
-                let bet365 = fixture.odds?.bookmakers?.find(b => b.id === 8);
+                    // Try to find bet365 first (ID 8)
+                    let bet365 = fixture.odds?.bookmakers?.find(b => b.id === 8);
+
+                    // If not found, use any available bookmaker
+                    if (!bet365 && fixture.odds?.bookmakers?.length > 0) {
+                        bet365 = fixture.odds.bookmakers[0];
+                        console.log("Using alternative bookmaker:", bet365.name);
+                    }
+
                 let matchWinnerOdds = bet365?.bets?.find(bet => bet.id === 1);
+                console.log("Match winner odds:", matchWinnerOdds);
 
-                let homeWin = matchWinnerOdds?.values?.find(v => v.value === "Home")?.odd ?? 'N/A';
-                let draw = matchWinnerOdds?.values?.find(v => v.value === "Draw")?.odd ?? 'N/A';
-                let awayWin = matchWinnerOdds?.values?.find(v => v.value === "Away")?.odd ?? 'N/A';
+                let homeWin = 'N/A';
+                let draw = 'N/A';
+                let awayWin = 'N/A';
 
+                if (matchWinnerOdds?.values) {
+                    homeWin = matchWinnerOdds.values.find(v => v.value === "Home" || v.value === 1)?.odd || 'N/A';
+                    draw = matchWinnerOdds.values.find(v => v.value === "Draw" || v.value === 0)?.odd || 'N/A';
+                    awayWin = matchWinnerOdds.values.find(v => v.value === "Away" || v.value === 2)?.odd || 'N/A';
+                }
+
+                // Convert odds if necessary
                 if (currentOddsFormat !== 'decimal') {
                     homeWin = formatOdds(homeWin, currentOddsFormat);
                     draw = formatOdds(draw, currentOddsFormat);
@@ -287,7 +306,7 @@
                 return `
                     <div class='match-card ${isLive ? 'live-match' : ''} ${hasStarted ? 'started' : ''}'>
                         <div class="match-time ${isLive ? 'live' : ''}">
-                                ${isLive ? `<span class="live-indicator">LIVE ${elapsed}'</span>` : matchTime}
+                            ${isLive ? `<span class="live-indicator">LIVE ${elapsed}'</span>` : matchTime}
                         </div>
 
                         <div class="team home-team">
@@ -324,6 +343,7 @@
             matchContainer.innerHTML = matchesHtml;
         }, 500);
     }
+
 
     function formatOdds(odds, format) {
         if (odds === 'N/A') return odds;
