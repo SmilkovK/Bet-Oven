@@ -119,6 +119,7 @@ namespace SportService.Implementation
                         League = apiWrapper.League,
                         Teams = apiWrapper.Teams,
                         Goals = apiWrapper.Goals,
+                        Popular = apiWrapper.Popular,
                         Odds = await GetOdds(apiWrapper.Fixture.Id)
                     };
 

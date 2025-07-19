@@ -17,6 +17,7 @@ namespace SportDomain.DTO
         public LeagueInfo League { get; set; }
         public Teams Teams { get; set; }
         public Goals Goals { get; set; }
+        public bool Popular { get; set; }
     }
     public class ApiFixture
     {

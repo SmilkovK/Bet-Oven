@@ -6,9 +6,11 @@
     <title>@ViewData["Title"] - Bet_Oven</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/indexCss.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Bet_Oven.styles.css" asp-append-version="true" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    @RenderSection("Styles", required: false)
     <style>
         :root {
             --primary-dark: #0f172a;
@@ -157,7 +159,6 @@
 
         .container {
             padding: 30px;
-            margin-top: 16px;
             max-width: none;
             width: 100%;
             margin-left: 0;

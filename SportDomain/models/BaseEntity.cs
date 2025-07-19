@@ -10,4 +10,4 @@ namespace SportDomain.models
     {
         public Guid Id { get; set; }
     }
-}
+}   

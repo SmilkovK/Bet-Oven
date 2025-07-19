@@ -10,7 +10,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Views\Home\indexCss.cshtml.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Remove="Views\Fixtures\StatsError.cshtml" />
+    <Content Remove="Views\Home\indexCss.cshtml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Views\Home\index.css" />
   </ItemGroup>
 
   <ItemGroup>

@@ -58,6 +58,7 @@ namespace SportDomain.models
         public Teams Teams { get; set; }
         public Goals Goals { get; set; }
         public OddsInfo Odds { get; set; }
+        public bool Popular { get; set; }
     }
     public class MatchStatus
     {
