@@ -27,7 +27,6 @@ namespace SportDomain.models
         public string Round { get; set; }
 
     }
-
     public class CountryInfo
     {
         public string Name { get; set; }
@@ -40,13 +39,6 @@ namespace SportDomain.models
         public string Start { get; set; }
         public string End { get; set; }
         public bool Current { get; set; }
-    }
-    public class Test
-    {
-        public Fixture Fixture { get; set; }
-        public LeagueInfo League { get; set; }
-        public Teams Teams { get; set; }
-        public Goals Goals { get; set; }
     }
     public class Fixture
     {
@@ -109,19 +101,6 @@ namespace SportDomain.models
     {
         public string Type { get; set; }
         public object Value { get; set; }
-    }
-    public class TeamStatResponse
-    {
-        public TeamInfo Team { get; set; }
-        public List<TeamStatisticItem> Statistics { get; set; }
-    }
-    public class LeagueResponse
-    {
-        public LeagueStandings League { get; set; }
-    }
-    public class LeagueStandings
-    {
-        public List<List<Standing>> Standings { get; set; }
     }
     public class Standing
     {
@@ -186,5 +165,9 @@ namespace SportDomain.models
         public string Update {  get; set; }
 
     }
-
+    public class TeamStatResponse
+    {
+        public TeamInfo Team { get; set; }
+        public List<TeamStatisticItem> Statistics { get; set; }
+    }
 }

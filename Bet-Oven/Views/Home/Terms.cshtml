@@ -1,0 +1,188 @@
+﻿@{
+    ViewData["Title"] = "Terms of Service";
+}
+
+<style>
+    .sidebar-toggle-btn,
+    .navbar-secondary,
+    .sidebar,
+    .navbar-nav {
+        display: none;
+        
+    }
+</style>
+
+<style>
+    .terms-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .terms-content .card {
+        border: none;
+        border-radius: 10px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+        .terms-content .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
+
+    .terms-content .card-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 1rem;
+    }
+
+    .terms-content .card-text {
+        font-size: 1rem;
+        color: #555;
+        line-height: 1.6;
+    }
+
+    .list-group-item {
+        background-color: transparent;
+        border: none;
+        padding: 0.75rem 1.25rem;
+        color: #555;
+    }
+
+    address {
+        font-style: normal;
+        color: #555;
+    }
+
+        address a {
+            color: #3b82f6;
+            text-decoration: none;
+        }
+
+            address a:hover {
+                text-decoration: underline;
+            }
+</style>
+
+<div class="container terms-container">
+    <h1 class="display-4 text-center mb-4">@ViewData["Title"]</h1>
+    <p class="text-center text-muted mb-5">Last updated: October 2023</p>
+<div class="terms-content">
+        <!-- Acceptance of Terms Section -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h2 class="card-title">Acceptance of Terms</h2>
+                <p class="card-text">
+                    By accessing or using the services provided by <strong>Bet-Oven</strong>, you agree to be bound by these Terms of Service.
+                    If you do not agree to these terms, please do not use our services.
+                </p>
+            </div>
+        </div>
+
+        <!-- Description of Services Section -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h2 class="card-title">Description of Services</h2>
+                <p class="card-text">
+                    Bet-Oven provides an online platform for sports betting, including but not limited to football, basketball, and other
+                    live matches. Our services include live match updates, betting options, and user commentary.
+                </p>
+            </div>
+        </div>
+
+        <!-- User Responsibilities Section -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h2 class="card-title">User Responsibilities</h2>
+                <p class="card-text">
+                    As a user of Bet-Oven, you agree to:
+                </p>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">Provide accurate and complete information during registration.</li>
+                    <li class="list-group-item">Use the platform only for lawful purposes.</li>
+                    <li class="list-group-item">Not engage in any activity that disrupts or interferes with the services.</li>
+                    <li class="list-group-item">Comply with all applicable laws and regulations.</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Prohibited Activities Section -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h2 class="card-title">Prohibited Activities</h2>
+                <p class="card-text">
+                    You are prohibited from:
+                </p>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">Using automated systems or bots to access the platform.</li>
+                    <li class="list-group-item">Sharing your account credentials with others.</li>
+                    <li class="list-group-item">Engaging in fraudulent or illegal activities.</li>
+                    <li class="list-group-item">Posting offensive, abusive, or harmful content.</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Intellectual Property Section -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h2 class="card-title">Intellectual Property</h2>
+                <p class="card-text">
+                    All content on the Bet-Oven platform, including text, graphics, logos, and software, is the property of Bet-Oven
+                    or its licensors and is protected by intellectual property laws. You may not reproduce, distribute, or modify any
+                    content without our prior written consent.
+                </p>
+            </div>
+        </div>
+
+        <!-- Limitation of Liability Section -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h2 class="card-title">Limitation of Liability</h2>
+                <p class="card-text">
+                    Bet-Oven is not liable for any direct, indirect, incidental, or consequential damages arising from your use of
+                    our services. This includes, but is not limited to, loss of profits, data, or business opportunities.
+                </p>
+            </div>
+        </div>
+
+        <!-- Changes to Terms Section -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h2 class="card-title">Changes to Terms</h2>
+                <p class="card-text">
+                    We reserve the right to modify these Terms of Service at any time. Any changes will be posted on this page, and
+                    your continued use of the platform constitutes acceptance of the updated terms.
+                </p>
+            </div>
+        </div>
+
+        <!-- Governing Law Section -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h2 class="card-title">Governing Law</h2>
+                <p class="card-text">
+                    These Terms of Service are governed by the laws of the State of Nevada, USA. Any disputes arising from these terms
+                    will be resolved in the courts of Nevada.
+                </p>
+            </div>
+        </div>
+
+        <!-- Contact Us Section -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h2 class="card-title">Contact Us</h2>
+                <p class="card-text">
+                    If you have any questions about these Terms of Service, please contact us at:
+                </p>
+                <address class="mb-0">
+                    <strong>Bet-Oven</strong><br>
+                    123 Fantasy Street, Suite 456<br>
+                    Las Vegas, NV 89101, USA<br>
+                    <i class="fas fa-envelope me-2"></i>Email: <a href="mailto:info@bet-oven.com">info@bet-oven.com</a><br>
+                    <i class="fas fa-phone me-2"></i>Phone: +1 (555) 123-4567
+                </address>
+            </div>
+        </div>
+    </div>
+</div>

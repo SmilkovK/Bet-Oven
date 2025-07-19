@@ -1,6 +1,179 @@
 ﻿@{
     ViewData["Title"] = "Privacy Policy";
 }
-<h1>@ViewData["Title"]</h1>
 
-<p>Use this page to detail your site's privacy policy.</p>
+
+
+<style>
+    .sidebar-toggle-btn,
+    .navbar-secondary,
+    .sidebar,
+    .navbar-nav {
+        display: none;
+        
+    }
+</style>
+
+<div class="container privacy-container">
+    <h1 class="display-4 text-center mb-4">@ViewData["Title"]</h1>
+    <p class="text-center text-muted mb-5">Last updated: December 2024</p>
+
+    <div class="privacy-content">
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h2 class="card-title">Introduction</h2>
+                <p class="card-text">
+                    At <strong>Bet-Oven</strong>, we are committed to protecting your privacy. This Privacy Policy explains how we collect,
+                    use, and safeguard your information when you visit our website or use our services.
+                </p>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h2 class="card-title">Information We Collect</h2>
+                <p class="card-text">
+                    We may collect the following types of information:
+                </p>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item"><strong>Personal Information:</strong> Name, email address, phone number, etc.</li>
+                    <li class="list-group-item"><strong>Usage Data:</strong> IP address, browser type, pages visited, etc.</li>
+                    <li class="list-group-item"><strong>Cookies:</strong> We use cookies to enhance your experience on our site.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h2 class="card-title">How We Use Your Information</h2>
+                <p class="card-text">
+                    We use the information we collect for the following purposes:
+                </p>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">To provide and maintain our services.</li>
+                    <li class="list-group-item">To improve your experience on our website.</li>
+                    <li class="list-group-item">To communicate with you, including sending updates and promotional materials.</li>
+                    <li class="list-group-item">To analyze usage and trends to improve our services.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h2 class="card-title">Sharing Your Information</h2>
+                <p class="card-text">
+                    We do not sell, trade, or otherwise transfer your personal information to outside parties except in the following
+                    circumstances:
+                </p>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">With your consent.</li>
+                    <li class="list-group-item">To comply with legal obligations.</li>
+                    <li class="list-group-item">To protect and defend our rights and property.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h2 class="card-title">Security</h2>
+                <p class="card-text">
+                    We implement a variety of security measures to protect your personal information. However, no method of transmission
+                    over the internet or electronic storage is 100% secure.
+                </p>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h2 class="card-title">Your Rights</h2>
+                <p class="card-text">
+                    You have the right to:
+                </p>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">Access the personal information we hold about you.</li>
+                    <li class="list-group-item">Request correction or deletion of your personal information.</li>
+                    <li class="list-group-item">Opt-out of receiving promotional communications.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h2 class="card-title">Changes to This Privacy Policy</h2>
+                <p class="card-text">
+                    We may update this Privacy Policy from time to time. Any changes will be posted on this page with an updated revision
+                    date.
+                </p>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h2 class="card-title">Contact Us</h2>
+                <p class="card-text">
+                    If you have any questions about this Privacy Policy, please contact us at:
+                </p>
+                <address class="mb-0">
+                    <strong>Bet-Oven</strong><br>
+                    123 Fantasy Street, Suite 456<br>
+                    Las Vegas, NV 89101, USA<br>
+                    <i class="fas fa-envelope me-2"></i>Email: <a href="mailto:info@bet-oven.com">info@bet-oven.com</a><br>
+                    <i class="fas fa-phone me-2"></i>Phone: +1 (555) 123-4567
+                </address>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .privacy-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .privacy-content .card {
+        border: none;
+        border-radius: 10px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+        .privacy-content .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
+
+    .privacy-content .card-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 1rem;
+    }
+
+    .privacy-content .card-text {
+        font-size: 1rem;
+        color: #555;
+        line-height: 1.6;
+    }
+
+    .list-group-item {
+        background-color: transparent;
+        border: none;
+        padding: 0.75rem 1.25rem;
+        color: #555;
+    }
+
+    address {
+        font-style: normal;
+        color: #555;
+    }
+
+        address a {
+            color: #3b82f6;
+            text-decoration: none;
+        }
+
+            address a:hover {
+                text-decoration: underline;
+            }
+</style>

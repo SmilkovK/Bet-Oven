@@ -61,6 +61,15 @@ namespace Bet_Oven.Controllers
         }
 
 
+        public IActionResult Privacy()
+        {
+            return View();
+        }
+
+        public IActionResult Terms()
+        {
+            return View();
+        }
 
         [HttpPost("ToggleFavorite")]
         public IActionResult ToggleFavorite(int leagueId)
