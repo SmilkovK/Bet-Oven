@@ -235,7 +235,8 @@ namespace SportService.Implementation
             return apiResponse?.Response?.FirstOrDefault() ?? new OddsInfo();
         }
     }
-        public class ApiFootballOddsResponse
+
+    public class ApiFootballOddsResponse
     {
         public List<OddsInfo> Response { get; set; }
     }
@@ -247,19 +248,17 @@ namespace SportService.Implementation
     {
         public List<AllLeagues> Response { get; set; }
     }
-
-    public class ApiFootballTeamsResponse
-    {
-        public List<TeamInfo> Response { get; set; }
-    }
-
     public class ApiFootballFixturesResponse
     {
         public List<Fixture> Response { get; set; }
     }
-    public class ApiFootballMatchesResponse
+    public class LeagueResponse
     {
-        public List<Matches> Response { get; set; }
+        public LeagueStandings League { get; set; }
+    }
+    public class LeagueStandings
+    {
+        public List<List<Standing>> Standings { get; set; }
     }
 }
     
