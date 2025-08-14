@@ -1,6 +1,6 @@
 ﻿@model SportDomain.models.LeagueMatchesViewModel
 @section Styles {
-    <link rel="stylesheet" href="~/css/index.css" />
+    <link rel="stylesheet" href="~/css/indexCss.css" />
 }
 <div class="dashboard-container">
     <aside class="leagues-sidebar">
@@ -114,7 +114,6 @@
     </main>
 </div>
 
-<!-- Favorite confirmation modal -->
 <div class="modal-overlay hidden" id="favorite-modal-overlay">
     <div class="modal-content" id="favorite-modal">
         <div class="modal-header">
@@ -133,399 +132,389 @@
     </div>
 </div>
 
-<!-- Toast notification -->
 <div class="toast-container" id="toast-container"></div>
 
-<!-- Loading spinner overlay -->
 <div class="loading-overlay hidden" id="loading-overlay">
     <div class="loading-spinner"></div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Set current date
+    document.addEventListener('DOMContentLoaded', function () {
         const today = new Date();
         const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         document.getElementById('current-date').textContent = today.toLocaleDateString('en-US', options);
 
-        // Init search functionality
+        let favoriteLeagues = @Html.Raw(Json.Serialize(Model.FavoriteLeagues));
+        let pendingFavoriteAction = null;
+        let currentOddsFormat = 'decimal';
+
         initSearch();
-
-        
         autoSelectFirstFavoriteLeague();
-    });
-        function autoSelectFirstFavoriteLeague() {
-        if (favoriteLeagues.length > 0) {
-            const firstFavoriteLeagueId = favoriteLeagues[0];
-            const firstFavoriteLeagueCard = document.querySelector(`.league-card[data-league-id="${firstFavoriteLeagueId}"]`);
 
-            if (firstFavoriteLeagueCard) {
-                const leagueName = firstFavoriteLeagueCard.getAttribute('data-league-name');
-                showMatches(firstFavoriteLeagueId, leagueName);
+        function autoSelectFirstFavoriteLeague() {
+            if (favoriteLeagues.length > 0) {
+                const firstFavoriteLeagueId = favoriteLeagues[0];
+                const firstFavoriteLeagueCard = document.querySelector(`.league-card[data-league-id="${firstFavoriteLeagueId}"]`);
+
+                if (firstFavoriteLeagueCard) {
+                    const leagueName = firstFavoriteLeagueCard.getAttribute('data-league-name');
+                    showMatches(firstFavoriteLeagueId, leagueName);
+                }
             }
         }
-    }
-    let favoriteLeagues = @Html.Raw(Json.Serialize(Model.FavoriteLeagues));
-    let pendingFavoriteAction = null;
-    let currentOddsFormat = 'decimal';
 
-    function initSearch() {
-        const searchInput = document.getElementById('league-search');
-        const leagueCards = document.querySelectorAll('.league-card');
-        const noResults = document.getElementById('no-results');
+        function initSearch() {
+            const searchInput = document.getElementById('league-search');
+            const leagueCards = document.querySelectorAll('.league-card');
+            const noResults = document.getElementById('no-results');
 
-        searchInput.addEventListener('input', function() {
-            const searchTerm = this.value.toLowerCase().trim();
-            let matchCount = 0;
+            if (!searchInput) return;
 
-            leagueCards.forEach(card => {
-                const leagueName = card.getAttribute('data-league-name').toLowerCase();
-                if (leagueName.includes(searchTerm)) {
-                    card.classList.remove('hidden');
-                    matchCount++;
-                } else {
-                    card.classList.add('hidden');
-                }
-            });
+            searchInput.addEventListener('input', function () {
+                const searchTerm = this.value.toLowerCase().trim();
+                let matchCount = 0;
 
-            if (matchCount === 0) {
-                noResults.classList.remove('hidden');
-            } else {
-                noResults.classList.add('hidden');
-            }
-        });
-
-        // Sort alphabetically
-        document.getElementById('sort-alphabetical').addEventListener('click', function() {
-            const leaguesList = document.getElementById('leagues-list');
-            const cards = Array.from(leaguesList.children);
-
-            cards.sort((a, b) => {
-                const nameA = a.getAttribute('data-league-name').toLowerCase();
-                const nameB = b.getAttribute('data-league-name').toLowerCase();
-                return nameA.localeCompare(nameB);
-            });
-
-            cards.forEach(card => leaguesList.appendChild(card));
-
-            showToast('Leagues sorted alphabetically', 'info');
-        });
-
-        // Show favorites only
-        const favButton = document.getElementById('show-favorites-only');
-        favButton.addEventListener('click', function() {
-            this.classList.toggle('active');
-            const showFavoritesOnly = this.classList.contains('active');
-
-            leagueCards.forEach(card => {
-                if (showFavoritesOnly && !card.classList.contains('is-favorite')) {
-                    card.classList.add('hidden');
-                } else {
-                    card.classList.remove('hidden');
-                }
-            });
-
-            showToast(showFavoritesOnly ? 'Showing favorites only' : 'Showing all leagues', 'info');
-        });
-    }
-
-            function showMatches(leagueId, leagueName) {
-        console.log("Loading matches for:", leagueName);
-
-        let leagueNameElement = document.getElementById("league-name");
-        let matchContainer = document.getElementById("match-list");
-
-        leagueNameElement.textContent = leagueName;
-
-        // Show loading state
-        document.getElementById('loading-overlay').classList.remove('hidden');
-        matchContainer.innerHTML = "";
-
-        // Highlight selected league
-        document.querySelectorAll('.league-card').forEach(card => {
-            card.classList.remove('selected');
-        });
-        document.querySelector(`.league-card[data-league-id="${leagueId}"]`).classList.add('selected');
-
-        let fixtures = @Html.Raw(Json.Serialize(Model.FixturesGroupedByLeague));
-        console.log("Fixtures Data:", fixtures);
-
-        setTimeout(() => {
-            document.getElementById('loading-overlay').classList.add('hidden');
-
-            if (!fixtures[leagueId] || fixtures[leagueId].length === 0) {
-                matchContainer.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-calendar-times fa-3x"></i>
-                        <p>No matches available for this league today</p>
-                    </div>
-                `;
-                return;
-            }
-
-            let matchesHtml = fixtures[leagueId].map(fixture => {
-                console.log("Fixture data:", fixture);
-
-                const matchTime = new Date(fixture.date).toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: true
+                leagueCards.forEach(card => {
+                    const leagueName = card.getAttribute('data-league-name').toLowerCase();
+                    if (leagueName.includes(searchTerm)) {
+                        card.classList.remove('hidden');
+                        matchCount++;
+                    } else {
+                        card.classList.add('hidden');
+                    }
                 });
 
-                    // Try to find bet365 first (ID 8)
+                if (matchCount === 0) {
+                    noResults.classList.remove('hidden');
+                } else {
+                    noResults.classList.add('hidden');
+                }
+            });
+
+            document.getElementById('sort-alphabetical').addEventListener('click', function () {
+                const leaguesList = document.getElementById('leagues-list');
+                const cards = Array.from(leaguesList.children);
+
+                cards.sort((a, b) => {
+                    const nameA = a.getAttribute('data-league-name').toLowerCase();
+                    const nameB = b.getAttribute('data-league-name').toLowerCase();
+                    return nameA.localeCompare(nameB);
+                });
+
+                cards.forEach(card => leaguesList.appendChild(card));
+
+                showToast('Leagues sorted alphabetically', 'info');
+            });
+
+            const favButton = document.getElementById('show-favorites-only');
+            favButton.addEventListener('click', function () {
+                this.classList.toggle('active');
+                const showFavoritesOnly = this.classList.contains('active');
+
+                leagueCards.forEach(card => {
+                    if (showFavoritesOnly && !card.classList.contains('is-favorite')) {
+                        card.classList.add('hidden');
+                    } else {
+                        card.classList.remove('hidden');
+                    }
+                });
+
+                showToast(showFavoritesOnly ? 'Showing favorites only' : 'Showing all leagues', 'info');
+            });
+        }
+
+        window.showMatches = function (leagueId, leagueName) {
+            console.log("Loading matches for:", leagueName);
+
+            let leagueNameElement = document.getElementById("league-name");
+            let matchContainer = document.getElementById("match-list");
+
+            leagueNameElement.textContent = leagueName;
+
+            document.getElementById('loading-overlay').classList.remove('hidden');
+            matchContainer.innerHTML = "";
+
+            document.querySelectorAll('.league-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            const selectedCard = document.querySelector(`.league-card[data-league-id="${leagueId}"]`);
+            if (selectedCard) selectedCard.classList.add('selected');
+
+            let fixtures = @Html.Raw(Json.Serialize(Model.FixturesGroupedByLeague));
+            console.log("Fixtures Data:", fixtures);
+
+            setTimeout(() => {
+                document.getElementById('loading-overlay').classList.add('hidden');
+
+                if (!fixtures[leagueId] || fixtures[leagueId].length === 0) {
+                    matchContainer.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-calendar-times fa-3x"></i>
+                            <p>No matches available for this league today</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let matchesHtml = fixtures[leagueId].map(fixture => {
+                    console.log("Fixture data:", fixture);
+
+                    const matchTime = new Date(fixture.date).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true
+                    });
+
                     let bet365 = fixture.odds?.bookmakers?.find(b => b.id === 8);
 
-                    // If not found, use any available bookmaker
                     if (!bet365 && fixture.odds?.bookmakers?.length > 0) {
                         bet365 = fixture.odds.bookmakers[0];
                         console.log("Using alternative bookmaker:", bet365.name);
                     }
 
-                let matchWinnerOdds = bet365?.bets?.find(bet => bet.id === 1);
-                console.log("Match winner odds:", matchWinnerOdds);
+                    let matchWinnerOdds = bet365?.bets?.find(bet => bet.id === 1);
+                    console.log("Match winner odds:", matchWinnerOdds);
 
-                let homeWin = 'N/A';
-                let draw = 'N/A';
-                let awayWin = 'N/A';
+                    let homeWin = 'N/A';
+                    let draw = 'N/A';
+                    let awayWin = 'N/A';
 
-                if (matchWinnerOdds?.values) {
-                    homeWin = matchWinnerOdds.values.find(v => v.value === "Home" || v.value === 1)?.odd || 'N/A';
-                    draw = matchWinnerOdds.values.find(v => v.value === "Draw" || v.value === 0)?.odd || 'N/A';
-                    awayWin = matchWinnerOdds.values.find(v => v.value === "Away" || v.value === 2)?.odd || 'N/A';
+                    if (matchWinnerOdds?.values) {
+                        homeWin = matchWinnerOdds.values.find(v => v.value === "Home" || v.value === 1)?.odd || 'N/A';
+                        draw = matchWinnerOdds.values.find(v => v.value === "Draw" || v.value === 0)?.odd || 'N/A';
+                        awayWin = matchWinnerOdds.values.find(v => v.value === "Away" || v.value === 2)?.odd || 'N/A';
+                    }
+
+                    if (currentOddsFormat !== 'decimal') {
+                        homeWin = formatOdds(homeWin, currentOddsFormat);
+                        draw = formatOdds(draw, currentOddsFormat);
+                        awayWin = formatOdds(awayWin, currentOddsFormat);
+                    }
+
+                    const isLive = fixture.status?.short === 'LIVE';
+                    const elapsed = fixture.status?.elapsed ?? 0;
+                    const hasStarted = new Date(fixture.date) < new Date();
+
+                    return `
+                        <div class='match-card ${isLive ? 'live-match' : ''} ${hasStarted ? 'started' : ''}'>
+                            <div class="match-time ${isLive ? 'live' : ''}">
+                                ${isLive ? `<span class="live-indicator">LIVE ${elapsed}'</span>` : matchTime}
+                            </div>
+
+                            <div class="team home-team">
+                                <img class="team-logo" src="${fixture.teams.home.logo}" alt="${fixture.teams.home.name}" onerror="this.src='https://via.placeholder.com/30?text=?'" />
+                                <span class="team-name">${fixture.teams.home.name}</span>
+                            </div>
+
+                            <div class="match-odds">
+                                <button class="odd-btn" onclick="placeBet(${fixture.id}, 'home', '${homeWin}')">
+                                    <span class="odd-value">${homeWin}</span>
+                                </button>
+                                <button class="odd-btn" onclick="placeBet(${fixture.id}, 'draw', '${draw}')">
+                                    <span class="odd-value">${draw}</span>
+                                </button>
+                                <button class="odd-btn" onclick="placeBet(${fixture.id}, 'away', '${awayWin}')">
+                                    <span class="odd-value">${awayWin}</span>
+                                </button>
+                            </div>
+
+                            <div class="team away-team">
+                                <span class="team-name">${fixture.teams.away.name}</span>
+                                <img class="team-logo" src="${fixture.teams.away.logo}" alt="${fixture.teams.away.name}" onerror="this.src='https://via.placeholder.com/30?text=?'" />
+                            </div>
+
+                            <div class="match-actions">
+                                <button class="more-odds-btn" onclick="showMoreOdds(${fixture.id})">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join("");
+
+                matchContainer.innerHTML = matchesHtml;
+            }, 500);
+        };
+
+        function formatOdds(odds, format) {
+            if (odds === 'N/A') return odds;
+
+            const decimalOdds = parseFloat(odds);
+
+            if (format === 'fractional') {
+                const decimal = decimalOdds - 1;
+                let numerator = Math.round(decimal * 100);
+                let denominator = 100;
+                const gcd = findGCD(numerator, denominator);
+
+                return `${numerator / gcd}/${denominator / gcd}`;
+            } else if (format === 'american') {
+                if (decimalOdds >= 2) {
+                    return `+${Math.round((decimalOdds - 1) * 100)}`;
+                } else {
+                    return `${Math.round(-100 / (decimalOdds - 1))}`;
                 }
-
-                // Convert odds if necessary
-                if (currentOddsFormat !== 'decimal') {
-                    homeWin = formatOdds(homeWin, currentOddsFormat);
-                    draw = formatOdds(draw, currentOddsFormat);
-                    awayWin = formatOdds(awayWin, currentOddsFormat);
-                }
-
-                const isLive = fixture.status?.short === 'LIVE';
-                const elapsed = fixture.status?.elapsed ?? 0;
-                const hasStarted = new Date(fixture.date) < new Date();
-
-                return `
-                    <div class='match-card ${isLive ? 'live-match' : ''} ${hasStarted ? 'started' : ''}'>
-                        <div class="match-time ${isLive ? 'live' : ''}">
-                            ${isLive ? `<span class="live-indicator">LIVE ${elapsed}'</span>` : matchTime}
-                        </div>
-
-                        <div class="team home-team">
-                            <img class="team-logo" src="${fixture.teams.home.logo}" alt="${fixture.teams.home.name}" onerror="this.src='https://via.placeholder.com/30?text=?'" />
-                            <span class="team-name">${fixture.teams.home.name}</span>
-                        </div>
-
-                        <div class="match-odds">
-                            <button class="odd-btn" onclick="placeBet(${fixture.id}, 'home', '${homeWin}')">
-                                <span class="odd-value">${homeWin}</span>
-                            </button>
-                            <button class="odd-btn" onclick="placeBet(${fixture.id}, 'draw', '${draw}')">
-                                <span class="odd-value">${draw}</span>
-                            </button>
-                            <button class="odd-btn" onclick="placeBet(${fixture.id}, 'away', '${awayWin}')">
-                                <span class="odd-value">${awayWin}</span>
-                            </button>
-                        </div>
-
-                        <div class="team away-team">
-                            <span class="team-name">${fixture.teams.away.name}</span>
-                            <img class="team-logo" src="${fixture.teams.away.logo}" alt="${fixture.teams.away.name}" onerror="this.src='https://via.placeholder.com/30?text=?'" />
-                        </div>
-
-                        <div class="match-actions">
-                            <button class="more-odds-btn" onclick="showMoreOdds(${fixture.id})">
-                                <i class="fas fa-plus"></i>
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }).join("");
-
-            matchContainer.innerHTML = matchesHtml;
-        }, 500);
-    }
-
-
-    function formatOdds(odds, format) {
-        if (odds === 'N/A') return odds;
-
-        const decimalOdds = parseFloat(odds);
-
-        if (format === 'fractional') {
-            // Convert decimal to fractional
-            const decimal = decimalOdds - 1;
-            let numerator = Math.round(decimal * 100);
-            let denominator = 100;
-            const gcd = findGCD(numerator, denominator);
-
-            return `${numerator/gcd}/${denominator/gcd}`;
-        } else if (format === 'american') {
-            // Convert decimal to American
-            if (decimalOdds >= 2) {
-                return `+${Math.round((decimalOdds - 1) * 100)}`;
-            } else {
-                return `${Math.round(-100 / (decimalOdds - 1))}`;
             }
+
+            return odds;
         }
 
-        return odds;
-    }
-
-    function findGCD(a, b) {
-        return b ? findGCD(b, a % b) : a;
-    }
-
-    // Odds format switcher
-    document.getElementById('odds-format').addEventListener('change', function() {
-        currentOddsFormat = this.value;
-        const activeLeague = document.querySelector('.league-card.selected');
-
-        if (activeLeague) {
-            const leagueId = activeLeague.getAttribute('data-league-id');
-            const leagueName = activeLeague.getAttribute('data-league-name');
-            showMatches(leagueId, leagueName);
-
-            showToast(`Odds format changed to ${currentOddsFormat}`, 'info');
-        }
-    });
-
-    function toggleFavorite(event, leagueId) {
-        event.stopPropagation();
-        pendingFavoriteAction = leagueId;
-
-        const leagueCard = document.querySelector(`.league-card[data-league-id="${leagueId}"]`);
-        const leagueName = leagueCard.getAttribute('data-league-name');
-        let isFavorite = favoriteLeagues.includes(leagueId);
-
-        document.getElementById("popup-text").textContent = isFavorite ?
-            `Remove ${leagueName} from your favorites?` :
-            `Add ${leagueName} to your favorites?`;
-
-        document.getElementById("modal-title").textContent = isFavorite ?
-            "Remove from Favorites" : "Add to Favorites";
-
-        document.getElementById("favorite-modal-overlay").classList.remove("hidden");
-    }
-
-    function confirmFavorite(confirmed) {
-        if (!confirmed || pendingFavoriteAction === null) {
-            closeModal();
-            return;
+        function findGCD(a, b) {
+            return b ? findGCD(b, a % b) : a;
         }
 
-        const leagueCard = document.querySelector(`.league-card[data-league-id="${pendingFavoriteAction}"]`);
-        const leagueName = leagueCard.getAttribute('data-league-name');
-        const isFavorite = favoriteLeagues.includes(pendingFavoriteAction);
+        document.getElementById('odds-format').addEventListener('change', function () {
+            currentOddsFormat = this.value;
+            const activeLeague = document.querySelector('.league-card.selected');
 
-        document.getElementById('loading-overlay').classList.remove('hidden');
+            if (activeLeague) {
+                const leagueId = activeLeague.getAttribute('data-league-id');
+                const leagueName = activeLeague.getAttribute('data-league-name');
+                showMatches(leagueId, leagueName);
 
-        fetch(`/ToggleFavorite?leagueId=${pendingFavoriteAction}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                showToast(`Odds format changed to ${currentOddsFormat}`, 'info');
             }
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(data => {
-            document.getElementById('loading-overlay').classList.add('hidden');
-
-            if (data.success) {
-                console.log("Favorite leagues updated:", data.favoriteLeagues);
-                favoriteLeagues = data.favoriteLeagues;
-
-                let starIcon = document.querySelector(`.league-card[data-league-id="${pendingFavoriteAction}"] .favorite-btn`);
-                let leagueCard = document.querySelector(`.league-card[data-league-id="${pendingFavoriteAction}"]`);
-
-                if (starIcon) {
-                    starIcon.classList.toggle("active", data.favoriteLeagues.includes(pendingFavoriteAction));
-                    leagueCard.classList.toggle("is-favorite", data.favoriteLeagues.includes(pendingFavoriteAction));
-
-                    starIcon.setAttribute('title', data.favoriteLeagues.includes(pendingFavoriteAction) ?
-                        'Remove from favorites' : 'Add to favorites');
-                }
-
-                showToast(
-                    isFavorite ?
-                    `${leagueName} removed from favorites` :
-                    `${leagueName} added to favorites`,
-                    'success'
-                );
-
-                const showFavoritesOnly = document.getElementById('show-favorites-only').classList.contains('active');
-                if (showFavoritesOnly && !data.favoriteLeagues.includes(pendingFavoriteAction)) {
-                    leagueCard.classList.add('hidden');
-                }
-            }
-        })
-        .catch(error => {
-            document.getElementById('loading-overlay').classList.add('hidden');
-            console.error('Error toggling favorite:', error);
-            showToast('Failed to update favorites', 'error');
         });
 
-        closeModal();
-    }
+        function toggleFavorite(event, leagueId) {
+            event.stopPropagation();
+            pendingFavoriteAction = leagueId;
 
-    function closeModal() {
-        document.getElementById("favorite-modal-overlay").classList.add("hidden");
-    }
+            const leagueCard = document.querySelector(`.league-card[data-league-id="${leagueId}"]`);
+            const leagueName = leagueCard.getAttribute('data-league-name');
+            let isFavorite = favoriteLeagues.includes(leagueId);
 
-    function showToast(message, type = 'info') {
-        const toast = document.createElement('div');
-        toast.className = `toast toast-${type}`;
-        toast.innerHTML = `
-            <div class="toast-icon">
-                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
-            </div>
-            <div class="toast-message">${message}</div>
-        `;
+            document.getElementById("popup-text").textContent = isFavorite ?
+                `Remove ${leagueName} from your favorites?` :
+                `Add ${leagueName} to your favorites?`;
 
-        const container = document.getElementById('toast-container');
-        container.appendChild(toast);
-        setTimeout(() => {
-            toast.classList.add('show');
-        }, 10);
+            document.getElementById("modal-title").textContent = isFavorite ?
+                "Remove from Favorites" : "Add to Favorites";
 
-        setTimeout(() => {
-            toast.classList.remove('show');
-            setTimeout(() => {
-                container.removeChild(toast);
-            }, 300);
-        }, 3000);
-    }
+            document.getElementById("favorite-modal-overlay").classList.remove("hidden");
+        }
 
-    function placeBet(fixtureId, type, odds) {
-        showToast(`Bet ${type} placed on match #${fixtureId} with odds ${odds}`, 'success');
+        window.confirmFavorite = function (confirmed) {
+            if (!confirmed || pendingFavoriteAction === null) {
+                closeModal();
+                return;
             }
 
-    function showMoreOdds(fixtureId) {
-        showToast(`More betting options for match #${fixtureId}`, 'info');
-    }
+            const leagueCard = document.querySelector(`.league-card[data-league-id="${pendingFavoriteAction}"]`);
+            const leagueName = leagueCard.getAttribute('data-league-name');
+            const isFavorite = favoriteLeagues.includes(pendingFavoriteAction);
 
-    document.getElementById('refresh-matches').addEventListener('click', function() {
-        const activeLeague = document.querySelector('.league-card.selected');
+            document.getElementById('loading-overlay').classList.remove('hidden');
 
-        if (activeLeague) {
-            const leagueId = activeLeague.getAttribute('data-league-id');
-            const leagueName = activeLeague.getAttribute('data-league-name');
+            fetch(`/ToggleFavorite?leagueId=${pendingFavoriteAction}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                }
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    document.getElementById('loading-overlay').classList.add('hidden');
 
-            this.classList.add('spinning');
+                    if (data.success) {
+                        favoriteLeagues = data.favoriteLeagues;
+
+                        let starIcon = document.querySelector(`.league-card[data-league-id="${pendingFavoriteAction}"] .favorite-btn`);
+                        let leagueCard = document.querySelector(`.league-card[data-league-id="${pendingFavoriteAction}"]`);
+
+                        if (starIcon && leagueCard) {
+                            starIcon.classList.toggle("active", favoriteLeagues.includes(pendingFavoriteAction));
+                            leagueCard.classList.toggle("is-favorite", favoriteLeagues.includes(pendingFavoriteAction));
+
+                            starIcon.setAttribute('title', favoriteLeagues.includes(pendingFavoriteAction) ?
+                                'Remove from favorites' : 'Add to favorites');
+                        }
+
+                        showToast(
+                            isFavorite ?
+                                `${leagueName} removed from favorites` :
+                                `${leagueName} added to favorites`,
+                            'success'
+                        );
+
+                        const showFavoritesOnly = document.getElementById('show-favorites-only').classList.contains('active');
+                        if (showFavoritesOnly && !favoriteLeagues.includes(pendingFavoriteAction)) {
+                            leagueCard.classList.add('hidden');
+                        }
+                    } else {
+                        showToast('Failed to update favorites', 'error');
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('loading-overlay').classList.add('hidden');
+                    console.error('Error toggling favorite:', error);
+                    showToast('Failed to update favorites', 'error');
+                });
+
+            closeModal();
+        };
+
+        function closeModal() {
+            document.getElementById("favorite-modal-overlay").classList.add("hidden");
+            pendingFavoriteAction = null;
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.innerHTML = `
+                <div class="toast-icon">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                </div>
+                <div class="toast-message">${message}</div>
+            `;
+
+            const container = document.getElementById('toast-container');
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('show');
+            }, 10);
 
             setTimeout(() => {
-                showMatches(leagueId, leagueName);
-                this.classList.remove('spinning');
-                showToast('Matches refreshed', 'success');
-            }, 1000);
-        } else {
-            showToast('Select a league first', 'info');
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    container.removeChild(toast);
+                }, 300);
+            }, 3000);
         }
+
+        window.placeBet = function (fixtureId, type, odds) {
+            showToast(`Bet ${type} placed on match #${fixtureId} with odds ${odds}`, 'success');
+        };
+
+        window.showMoreOdds = function (fixtureId) {
+            showToast(`More betting options for match #${fixtureId}`, 'info');
+        };
+
+        document.getElementById('refresh-matches').addEventListener('click', function () {
+            const activeLeague = document.querySelector('.league-card.selected');
+
+            if (activeLeague) {
+                const leagueId = activeLeague.getAttribute('data-league-id');
+                const leagueName = activeLeague.getAttribute('data-league-name');
+
+                this.classList.add('spinning');
+
+                setTimeout(() => {
+                    showMatches(leagueId, leagueName);
+                    this.classList.remove('spinning');
+                    showToast('Matches refreshed', 'success');
+                }, 1000);
+            } else {
+                showToast('Select a league first', 'info');
+            }
+        });
     });
 </script>
