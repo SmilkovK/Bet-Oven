@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/indexCss.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/Bet_Oven.styles.css" asp-append-version="true" />
+   @* <link rel="stylesheet" href="~/Bet_Oven.styles.css" asp-append-version="true" />*@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     @RenderSection("Styles", required: false)
@@ -165,7 +165,6 @@
             transition: margin-left 0.3s ease-out;
         }
 
-        /* Card styling */
         .card {
             border: none;
             border-radius: var(--border-radius-md);
@@ -242,23 +241,18 @@
                 font-size: 0.85rem;
             }
 
-            /* Make the toggle button slightly more visible on hover */
             .sidebar-toggle-btn:hover {
                 color: var(--text-primary);
             }
     </style>
 </head>
 <body>
-    <!-- Main Header -->
     <header>
         <nav class="navbar navbar-main navbar-expand-sm navbar-toggleable-sm">
             <div class="container-fluid">
-                <!-- Left: Site Name -->
                 <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">
                     <i class="fas fa-fire-flame-curved me-2"></i>Bet_Oven
                 </a>
-
-                <!-- Middle: Links -->
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-center">
                     <ul class="navbar-nav">
                         <li class="nav-item">
@@ -274,12 +268,10 @@
                     </ul>
                 </div>
 
-                <!-- Right: Login Partial -->
                 <partial name="_LoginPartial" />
             </div>
         </nav>
 
-        <!-- Secondary Header -->
         <nav class="navbar navbar-secondary navbar-expand-sm navbar-toggleable-sm">
             <div class="container-fluid d-flex justify-content-center">
                 <ul class="navbar-nav">
@@ -298,10 +290,8 @@
         </nav>
     </header>
 
-    <!-- Hover trigger area for sidebar -->
     <div class="sidebar-trigger"></div>
 
-    <!-- Left Sidebar -->
     <div class="sidebar">
         <ul class="navbar-nav">
             <li class="nav-item">
@@ -333,7 +323,6 @@
     <script src="~/js/site.js" asp-append-version="true"></script>
 
     <script>
-        // Add active class to current page in sidebar
         document.addEventListener('DOMContentLoaded', function() {
             const currentPath = window.location.pathname;
             const sidebarLinks = document.querySelectorAll('.sidebar .nav-link');

@@ -1,7 +1,5 @@
 ﻿@model List<SportDomain.models.Fixture>
-@{
-    ViewData["Title"] = "Live Football Matches";
-}
+
 <link rel="stylesheet" href="~/css/liveMatchesCss.css" />
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
 
@@ -72,7 +70,7 @@
                                     }
                                 </div>
                                 <div class="match-date">
-                                    @* Uncomment and format date if needed: @match.Date?.ToString("yyyy-MM-dd HH:mm") *@
+                                    @match.Date?.ToString("yyyy-MM-dd HH:mm")
                                 </div>
                             </div>
                             <div class="team away-team">
