@@ -70,6 +70,7 @@ button {
     transition: all 0.3s ease;
     overflow: hidden;
     flex-shrink: 0;
+    height: 90vh;
 }
 
 .sidebar-header {
@@ -148,10 +149,12 @@ button {
 
 .leagues-list {
     overflow-y: auto;
-    flex-grow: 1;
+    overflow-x: hidden;
+    flex: 1;
     padding: 16px;
     scrollbar-width: thin;
     scrollbar-color: var(--bg-light) transparent;
+    min-height: 0
 }
 
     .leagues-list::-webkit-scrollbar {
