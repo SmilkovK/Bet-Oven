@@ -48,7 +48,7 @@ namespace Bet_Oven.Controllers
         public async Task<IActionResult> Index()
         {
             var user = await _userManager.GetUserAsync(User);
-            List<int> favoriteLeagues = new List<int>();
+            var favoriteLeagues = new List<int>();
 
             if (user != null)
             {
@@ -58,7 +58,7 @@ namespace Bet_Oven.Controllers
                     .ToListAsync();
             }
 
-            var fixtures = await _footballService.GetTodaysFixtures();
+            var fixtures = await _footballService.GetTodaysFixtures(PopularLeagueIds);
 
             var fixturesGroupedByLeague = fixtures
                 .Where(f => f.League != null)
@@ -70,10 +70,7 @@ namespace Bet_Oven.Controllers
                 .Select(f => new AllLeagues
                 {
                     League = f.League,
-                    Country = new CountryInfo
-                    {
-                        Name = f.League.Country
-                    },
+                    Country = new CountryInfo { Name = f.League.Country },
                     Seasons = new List<SeasonInfo>()
                 })
                 .GroupBy(l => l.League.Id)
@@ -90,10 +87,6 @@ namespace Bet_Oven.Controllers
 
             return View(model);
         }
-
-
-
-
 
         [HttpGet]
         public async Task<IActionResult> GetOtherFixtures(int skip = 0, int take = 10)
