@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -21,15 +21,6 @@ namespace Bet_Oven.Controllers
         private readonly FootballApiService _footballService;
         private readonly IFavoriteService _favoriteService;
         private readonly UserManager<BetUser> _userManager;
-
-        private readonly int[] PopularLeagueIds =
-        {
-            39,
-            140,
-            135, 
-            78, 
-            61  
-        };
 
         public HomeController(
             ILogger<HomeController> logger,
@@ -58,7 +49,7 @@ namespace Bet_Oven.Controllers
                     .ToListAsync();
             }
 
-            var fixtures = await _footballService.GetTodaysFixtures(PopularLeagueIds);
+            var fixtures = await _footballService.GetTodaysFixtures();
 
             var fixturesGroupedByLeague = fixtures
                 .Where(f => f.League != null)
@@ -93,8 +84,9 @@ namespace Bet_Oven.Controllers
         {
             var fixtures = await _footballService.GetTodaysFixtures();
 
+            // 🔹 Just paginate over all fixtures
             var otherFixtures = fixtures
-                .Where(f => !PopularLeagueIds.Contains(f.League.Id))
+                .Where(f => f.League != null)
                 .GroupBy(f => f.League.Id)
                 .Skip(skip)
                 .Take(take)

@@ -55,16 +55,16 @@ namespace SportService.Implementation
                 }
             }
 
-            var popularLeagueIds = new int[] { 39, 140, 135, 78, 61 };
-            var popularOdds = await GetOdds(popularLeagueIds);
+            var allOdds = await GetOdds(DateTime.UtcNow.ToString("yyyy-MM-dd"), bookmakerId: 8);
 
             foreach (var fixture in fixtures)
             {
-                fixture.Odds = popularOdds.FirstOrDefault(o => o.Fixture.Id == fixture.Id) ?? new OddsInfo();
+                fixture.Odds = allOdds.FirstOrDefault(o => o.Fixture.Id == fixture.Id) ?? new OddsInfo();
             }
 
             return fixtures;
         }
+
 
 
         public async Task<List<AllLeagues>> GetLeagues()
@@ -100,7 +100,7 @@ namespace SportService.Implementation
             return formattedLeagues;
         }
 
-        public async Task<List<Fixture>> GetTodaysFixtures(int[] popularLeagueIds = null, int bookmakerId = 8)
+        public async Task<List<Fixture>> GetTodaysFixtures(int bookmakerId = 8)
         {
             string today = DateTime.UtcNow.ToString("yyyy-MM-dd");
 
@@ -123,45 +123,34 @@ namespace SportService.Implementation
                 Popular = f.Popular
             }).ToList() ?? new List<Fixture>();
 
-            if (popularLeagueIds != null && popularLeagueIds.Length > 0)
+            var allOdds = new List<OddsInfo>();
+            int currentPage = 1;
+            int totalPages = 1;
+            int maxPages = 30;
+
+            do
             {
-                fixtures = fixtures.Where(f => f.League != null && popularLeagueIds.Contains(f.League.Id)).ToList();
+                var oddsResponse = await _httpClient.GetAsync($"{BaseUrl}odds?date={today}&bookmaker={bookmakerId}&page={currentPage}");
+                if (!oddsResponse.IsSuccessStatusCode) break;
 
-                var popularOdds = await GetOdds(popularLeagueIds, bookmakerId);
+                var oddsJson = await oddsResponse.Content.ReadAsStringAsync();
+                var oddsApi = JsonSerializer.Deserialize<ApiFootballOddsPagedResponse>(oddsJson,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-                foreach (var fixture in fixtures)
-                {
-                    fixture.Odds = popularOdds.FirstOrDefault(o => o.Fixture.Id == fixture.Id) ?? new OddsInfo();
-                }
-            }
-            else
+                if (oddsApi?.Response != null)
+                    allOdds.AddRange(oddsApi.Response);
+
+                totalPages = oddsApi?.Paging?.Total ?? 1;
+                currentPage++;
+
+            } while (currentPage <= totalPages && currentPage <= maxPages);
+
+            foreach (var fixture in fixtures)
             {
-                var allOdds = new List<OddsInfo>();
-                int currentPage = 1;
-                int totalPages = 1;
-                int maxPages = 30;
-
-                do
-                {
-                    var oddsResponse = await _httpClient.GetAsync($"{BaseUrl}odds?date={today}&bookmaker={bookmakerId}&page={currentPage}");
-                    if (!oddsResponse.IsSuccessStatusCode) break;
-
-                    var oddsJson = await oddsResponse.Content.ReadAsStringAsync();
-                    var oddsApi = JsonSerializer.Deserialize<ApiFootballOddsPagedResponse>(oddsJson,
-                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-                    if (oddsApi?.Response != null)
-                        allOdds.AddRange(oddsApi.Response);
-
-                    totalPages = oddsApi?.Paging?.Total ?? 1;
-                    currentPage++;
-                } while (currentPage <= totalPages && currentPage <= maxPages);
-
-                foreach (var fixture in fixtures)
-                {
-                    fixture.Odds = allOdds.FirstOrDefault(o => o.Fixture.Id == fixture.Id) ?? new OddsInfo();
-                }
+                fixture.Odds = allOdds.FirstOrDefault(o => o.Fixture.Id == fixture.Id);
             }
+
+            fixtures = fixtures.Where(f => f.Odds != null).ToList();
 
             return fixtures;
         }
@@ -262,45 +251,36 @@ namespace SportService.Implementation
                 ?? new List<Standing>();
         }
 
-        public async Task<List<OddsInfo>> GetOdds(int[] popularLeagueIds, int bookmakerId = 8)
+        public async Task<List<OddsInfo>> GetOdds(string date, int bookmakerId = 8)
         {
-            string today = DateTime.UtcNow.ToString("yyyy-MM-dd");
             var allOdds = new List<OddsInfo>();
+            int currentPage = 1;
+            int totalPages = 1;
+            int maxPages = 30;
 
-            var leagues = await GetLeagues();
-            var leagueSeasons = leagues
-                .Where(l => popularLeagueIds.Contains(l.League.Id))
-                .ToDictionary(l => l.League.Id, l => l.Seasons.FirstOrDefault()?.Year ?? DateTime.UtcNow.Year);
-
-            foreach (var leagueId in popularLeagueIds)
+            do
             {
-                if (!leagueSeasons.ContainsKey(leagueId)) continue;
-                int season = leagueSeasons[leagueId];
+                var response = await _httpClient.GetAsync(
+                    $"{BaseUrl}odds?date={date}&bookmaker={bookmakerId}&page={currentPage}");
 
-                int currentPage = 1;
-                int totalPages = 1;
-                int maxPages = 30;
+                if (!response.IsSuccessStatusCode)
+                    break;
 
-                do
-                {
-                    var response = await _httpClient.GetAsync($"{BaseUrl}odds?date={today}&bookmaker={bookmakerId}&league={leagueId}&season={season}&page={currentPage}");
-                    if (!response.IsSuccessStatusCode) break;
+                var json = await response.Content.ReadAsStringAsync();
+                var oddsApi = JsonSerializer.Deserialize<ApiFootballOddsPagedResponse>(json,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-                    var json = await response.Content.ReadAsStringAsync();
-                    var oddsApi = JsonSerializer.Deserialize<ApiFootballOddsPagedResponse>(json,
-                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                if (oddsApi?.Response != null)
+                    allOdds.AddRange(oddsApi.Response);
 
-                    if (oddsApi?.Response != null)
-                        allOdds.AddRange(oddsApi.Response);
+                totalPages = oddsApi?.Paging?.Total ?? 1;
+                currentPage++;
 
-                    totalPages = oddsApi?.Paging?.Total ?? 1;
-                    currentPage++;
-
-                } while (currentPage <= totalPages && currentPage <= maxPages);
-            }
+            } while (currentPage <= totalPages && currentPage <= maxPages);
 
             return allOdds;
         }
+
 
 
     }
