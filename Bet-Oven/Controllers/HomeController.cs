@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -22,15 +22,6 @@ namespace Bet_Oven.Controllers
         private readonly IFavoriteService _favoriteService;
         private readonly UserManager<BetUser> _userManager;
 
-        private readonly int[] PopularLeagueIds =
-        {
-            39,
-            140,
-            135, 
-            78, 
-            61  
-        };
-
         public HomeController(
             ILogger<HomeController> logger,
             ApplicationDbContext context,
@@ -48,7 +39,7 @@ namespace Bet_Oven.Controllers
         public async Task<IActionResult> Index()
         {
             var user = await _userManager.GetUserAsync(User);
-            List<int> favoriteLeagues = new List<int>();
+            var favoriteLeagues = new List<int>();
 
             if (user != null)
             {
@@ -70,10 +61,7 @@ namespace Bet_Oven.Controllers
                 .Select(f => new AllLeagues
                 {
                     League = f.League,
-                    Country = new CountryInfo
-                    {
-                        Name = f.League.Country
-                    },
+                    Country = new CountryInfo { Name = f.League.Country },
                     Seasons = new List<SeasonInfo>()
                 })
                 .GroupBy(l => l.League.Id)
@@ -91,17 +79,14 @@ namespace Bet_Oven.Controllers
             return View(model);
         }
 
-
-
-
-
         [HttpGet]
         public async Task<IActionResult> GetOtherFixtures(int skip = 0, int take = 10)
         {
             var fixtures = await _footballService.GetTodaysFixtures();
 
+            // 🔹 Just paginate over all fixtures
             var otherFixtures = fixtures
-                .Where(f => !PopularLeagueIds.Contains(f.League.Id))
+                .Where(f => f.League != null)
                 .GroupBy(f => f.League.Id)
                 .Skip(skip)
                 .Take(take)
