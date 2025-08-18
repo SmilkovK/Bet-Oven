@@ -511,6 +511,7 @@ button {
 .odd-value {
     font-size: 14px;
     font-weight: 600;
+    color: white;
 }
 
 .more-odds-btn {
