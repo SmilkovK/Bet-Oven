@@ -726,7 +726,6 @@ button {
     animation: spin 1s linear infinite;
 }
 
-/* Responsive styles */
 @@ media screen and (max-width: 1024px) {
     .leagues-sidebar {
         width: 280px;
@@ -758,7 +757,6 @@ button {
 
 }
 
-/* Bets Sidebar - Updated to match the existing dark theme */
 .bets-sidebar {
     width: 320px;
     background-color: var(--bg-medium);
@@ -773,6 +771,13 @@ button {
     overflow: hidden;
     transition: all 0.3s ease;
 }
+
+.odd-btn.selected-odd {
+    background-color: #B8860B;
+    color: white;
+    font-weight: bold;
+}
+
 
 .bets-header {
     padding: 24px 20px;

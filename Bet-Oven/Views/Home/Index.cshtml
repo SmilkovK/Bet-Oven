@@ -177,7 +177,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
 <script>
-    // Global variables
     let currentBets = [];
     let isUserLoggedIn = @Json.Serialize(isUserLoggedIn);
     let fixturesData = @Html.Raw(Json.Serialize(Model.FixturesGroupedByLeague));
@@ -185,7 +184,6 @@
     let pendingFavoriteAction = null;
     let currentOddsFormat = 'decimal';
 
-    // Utility functions
     function findGCD(a, b) {
         return b ? findGCD(b, a % b) : a;
     }
@@ -213,7 +211,6 @@
         return odds;
     }
 
-    // Core functions
     function showToast(message, type = 'info') {
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
@@ -349,7 +346,6 @@
         setTimeout(() => {
             document.getElementById('loading-overlay').classList.add('hidden');
 
-            // Convert leagueId to number since JSON keys might be strings
             const leagueIdNum = parseInt(leagueId);
             
             if (!fixturesData[leagueIdNum] || fixturesData[leagueIdNum].length === 0) {
@@ -402,7 +398,7 @@
                 const hasStarted = new Date(fixture.date) < new Date();
 
                 return `
-                    <div class='match-card ${isLive ? 'live-match' : ''} ${hasStarted ? 'started' : ''}'>
+                    <div class='match-card ${isLive ? 'live-match' : ''} ${hasStarted ? 'started' : ''}' data-fixture-id='${fixture.id}'>
                         <div class="match-time ${isLive ? 'live' : ''}">
                             ${isLive ? `<span class="live-indicator">LIVE ${elapsed}'</span>` : matchTime}
                         </div>
@@ -439,50 +435,67 @@
             }).join("");
 
             matchContainer.innerHTML = matchesHtml;
+            currentBets.forEach(bet => {
+            highlightSelectedOdd(bet.fixtureId, bet.type);
+        });
         }, 500);
     }
 
     function placeBet(fixtureId, type, odds) {
-        if (!isUserLoggedIn) {
-            showLoginModal();
-            return;
-        }
-        
-        // Find the fixture details
-        const activeLeague = document.querySelector('.league-card.selected');
-        if (!activeLeague) return;
-        
-        const leagueId = parseInt(activeLeague.getAttribute('data-league-id'));
-        
-        // Use the pre-serialized fixturesData
-        if (!fixturesData[leagueId]) return;
-        
-        const fixture = fixturesData[leagueId].find(f => f.id === fixtureId);
-        if (!fixture) return;
-        
-        // Create bet object
-        const bet = {
-            id: Date.now(), // Unique ID for the bet
-            fixtureId: fixtureId,
-            homeTeam: fixture.teams.home.name,
-            awayTeam: fixture.teams.away.name,
-            type: type,
-            odds: odds,
-            timestamp: new Date().toISOString()
-        };
-        
-        // Add to current bets
-        currentBets.push(bet);
-        
-        // Update UI
-        updateBetsList();
-        updatePotentialWin();
-        
-        showToast(`Bet added: ${type === 'draw' ? 'Draw' : type === 'home' ? fixture.teams.home.name + ' win' : fixture.teams.away.name + ' win'} (${odds})`, 'success');
+    if (!isUserLoggedIn) {
+        showLoginModal();
+        return;
     }
 
+    const activeLeague = document.querySelector('.league-card.selected');
+    if (!activeLeague) return;
+
+    const leagueId = parseInt(activeLeague.getAttribute('data-league-id'));
+    if (!fixturesData[leagueId]) return;
+
+    const fixture = fixturesData[leagueId].find(f => f.id === fixtureId);
+    if (!fixture) return;
+
+    const existingBetIndex = currentBets.findIndex(bet => bet.fixtureId === fixtureId);
+
+    const bet = {
+        id: existingBetIndex !== -1 ? currentBets[existingBetIndex].id : Date.now(),
+        fixtureId: fixtureId,
+        homeTeam: fixture.teams.home.name,
+        awayTeam: fixture.teams.away.name,
+        type: type,
+        odds: odds,
+        timestamp: new Date().toISOString()
+    };
+
+    if (existingBetIndex !== -1) {
+        currentBets[existingBetIndex] = bet;
+    } else {
+        currentBets.push(bet);
+    }
+
+    updateBetsList();
+    updatePotentialWin();
+
+    highlightSelectedOdd(fixtureId, type);
+
+    showToast(
+        `Bet ${existingBetIndex !== -1 ? 'updated' : 'added'}: ${type === 'draw' ? 'Draw' : type === 'home' ? fixture.teams.home.name + ' win' : fixture.teams.away.name + ' win'} (${odds})`,
+        'success'
+    );
+}
+
+    function highlightSelectedOdd(fixtureId, selectedType) {
+    const matchCard = document.querySelector(`.match-card[data-fixture-id="${fixtureId}"]`);
+    if (!matchCard) return;
+
+    matchCard.querySelectorAll('.odd-btn').forEach(btn => btn.classList.remove('selected-odd'));
+
+    const selectedButton = matchCard.querySelector(`.odd-btn[onclick*="'${selectedType}'"]`);
+    if (selectedButton) selectedButton.classList.add('selected-odd');
+}
+
     function showLoginModal() {
-        // Create login modal if it doesn't exist
         if (!document.getElementById('login-modal-overlay')) {
             const loginModal = document.createElement('div');
             loginModal.className = 'modal-overlay';
@@ -518,50 +531,57 @@
     }
 
     function redirectToLogin() {
-        // Redirect to your login page
         window.location.href = '/Identity/Account/Login?returnUrl=' + encodeURIComponent(window.location.pathname);
         closeLoginModal();
     }
 
     function updateBetsList() {
-        const betsList = document.getElementById('bets-list');
-        const betsFooter = document.getElementById('bets-footer');
-        
-        if (currentBets.length === 0) {
-            betsList.innerHTML = `
-                <div class="empty-bets">
-                    <i class="fas fa-ticket-alt fa-2x"></i>
-                    <p>No active bets</p>
-                </div>
-            `;
-            betsFooter.classList.add('hidden');
-            return;
-        }
-        
-        betsFooter.classList.remove('hidden');
-        
-        let betsHtml = '';
-        currentBets.forEach(bet => {
-            const betTypeText = bet.type === 'home' ? '1' : bet.type === 'draw' ? 'X' : '2';
-            const betDescription = `${bet.homeTeam} vs ${bet.awayTeam}`;
-            const betType = `${betTypeText}`;
-            
-            betsHtml += `
-                <div class="bet-item" data-bet-id="${bet.id}">
-                    <div class="bet-info">
-                        <div class="bet-description">${betDescription}</div>
-                        <div class="bet-type">${betType}</div>
-                        <div class="bet-odds">${bet.odds}</div>
-                    </div>
-                    <button class="remove-bet" onclick="removeBet${bet.id}">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-            `;
-        });
-        
-        betsList.innerHTML = betsHtml;
+    const betsList = document.getElementById('bets-list');
+    const betsFooter = document.getElementById('bets-footer');
+
+    if (currentBets.length === 0) {
+        betsList.innerHTML = `
+            <div class="empty-bets">
+                <i class="fas fa-ticket-alt fa-2x"></i>
+                <p>No active bets</p>
+            </div>
+        `;
+        betsFooter.classList.add('hidden');
+        return;
     }
+
+    betsFooter.classList.remove('hidden');
+
+    let betsHtml = '';
+    currentBets.forEach(bet => {
+        const betTypeText = bet.type === 'home' ? '1' : bet.type === 'draw' ? 'X' : '2';
+        const betDescription = `${bet.homeTeam} vs ${bet.awayTeam}`;
+
+        betsHtml += `
+            <div class="bet-item active-bet" data-bet-id="${bet.id}">
+                <div class="bet-info">
+                    <div class="bet-description">${betDescription}</div>
+                    <div class="bet-type">${betTypeText}</div>
+                    <div class="bet-odds">${bet.odds}</div>
+                </div>
+                <button class="remove-bet" onclick="removeBet(${bet.id})">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `;
+    });
+
+    betsList.innerHTML = betsHtml;
+
+    document.querySelectorAll('.match-card').forEach(card => {
+        const fixtureId = parseInt(card.getAttribute('data-fixture-id'));
+        if (currentBets.some(bet => bet.fixtureId === fixtureId)) {
+            card.classList.add('selected-bet');
+        } else {
+            card.classList.remove('selected-bet');
+        }
+    });
+}
 
     function removeBet(betId) {
         currentBets = currentBets.filter(bet => bet.id !== betId);
@@ -600,24 +620,18 @@
 
         const stake = parseFloat(document.getElementById('total-stake').value) || 0;
 
-        // Validate stake
         if (stake <= 0) {
             showToast('Please enter a valid stake amount', 'error');
             return;
         }
 
-        // Here you would typically send the bets to your server
-        // For now, we'll simulate the API call
         document.getElementById('loading-overlay').classList.remove('hidden');
 
-        // Simulate API call
         setTimeout(() => {
             document.getElementById('loading-overlay').classList.add('hidden');
 
-            // Simulate successful bet placement
             showToast('Bet placed successfully!', 'success');
 
-            // Clear current bets after successful placement
             currentBets = [];
             updateBetsList();
             updatePotentialWin();
@@ -700,7 +714,6 @@
         });
     }
 
-    // Initialize the application when DOM is loaded
     document.addEventListener('DOMContentLoaded', function () {
         const today = new Date();
         const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
@@ -711,12 +724,10 @@
         initSearch();
         autoSelectFirstFavoriteLeague();
 
-        // Add new event listeners for bets functionality
         document.getElementById('clear-all-bets')?.addEventListener('click', clearAllBets);
         document.getElementById('total-stake')?.addEventListener('input', updatePotentialWin);
         document.getElementById('place-bet-btn')?.addEventListener('click', placeAllBets);
 
-        // Event listeners
         document.getElementById('odds-format').addEventListener('change', function () {
             currentOddsFormat = this.value;
             const activeLeague = document.querySelector('.league-card.selected');
