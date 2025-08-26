@@ -325,61 +325,53 @@
     }
 
     function showMatches(leagueId, leagueName) {
-        console.log("Loading matches for:", leagueName);
 
-        let leagueNameElement = document.getElementById("league-name");
-        let matchContainer = document.getElementById("match-list");
+    const leagueNameElement = document.getElementById("league-name");
+    const matchContainer = document.getElementById("match-list");
 
-        leagueNameElement.textContent = leagueName;
+    leagueNameElement.textContent = leagueName;
+    document.getElementById('loading-overlay').classList.remove('hidden');
+    matchContainer.innerHTML = "";
 
-        document.getElementById('loading-overlay').classList.remove('hidden');
-        matchContainer.innerHTML = "";
+    document.querySelectorAll('.league-card').forEach(card => card.classList.remove('selected'));
+    const selectedCard = document.querySelector(`.league-card[data-league-id="${leagueId}"]`);
+    if (selectedCard) selectedCard.classList.add('selected');
 
-        document.querySelectorAll('.league-card').forEach(card => {
-            card.classList.remove('selected');
-        });
-        const selectedCard = document.querySelector(`.league-card[data-league-id="${leagueId}"]`);
-        if (selectedCard) selectedCard.classList.add('selected');
+    console.log("Fixtures Data:", fixturesData);
 
-        console.log("Fixtures Data:", fixturesData);
+    setTimeout(() => {
+        document.getElementById('loading-overlay').classList.add('hidden');
 
-        setTimeout(() => {
-            document.getElementById('loading-overlay').classList.add('hidden');
+        const leagueIdNum = parseInt(leagueId);
+        
+        if (!fixturesData[leagueIdNum] || fixturesData[leagueIdNum].length === 0) {
+            matchContainer.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-calendar-times fa-3x"></i>
+                    <p>No matches available for this league today</p>
+                </div>
+            `;
+            return;
+        }
 
-            const leagueIdNum = parseInt(leagueId);
-            
-            if (!fixturesData[leagueIdNum] || fixturesData[leagueIdNum].length === 0) {
-                matchContainer.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-calendar-times fa-3x"></i>
-                        <p>No matches available for this league today</p>
-                    </div>
-                `;
-                return;
-            }
+        const matchesHtml = fixturesData[leagueIdNum].map(fixture => {
+            console.log("Fixture data:", fixture);
 
-            let matchesHtml = fixturesData[leagueIdNum].map(fixture => {
-                console.log("Fixture data:", fixture);
+            const matchTime = new Date(fixture.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
 
-                const matchTime = new Date(fixture.date).toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: true
-                });
+            const isLive = fixture.status?.short === 'LIVE';
+            const hasStarted = new Date(fixture.date) < new Date();
+            const isFinished = fixture.status?.short === 'FT' || fixture.status?.long === 'Full Time';
 
+            const homeScore = isFinished ? fixture.goals.home : null;
+            const awayScore = isFinished ? fixture.goals.away : null;
+
+            let homeWin = 'N/A', draw = 'N/A', awayWin = 'N/A';
+            if (!isFinished) {
                 let bet365 = fixture.odds?.bookmakers?.find(b => b.id === 8);
+                if (!bet365 && fixture.odds?.bookmakers?.length > 0) bet365 = fixture.odds.bookmakers[0];
 
-                if (!bet365 && fixture.odds?.bookmakers?.length > 0) {
-                    bet365 = fixture.odds.bookmakers[0];
-                    console.log("Using alternative bookmaker:", bet365.name);
-                }
-
-                let matchWinnerOdds = bet365?.bets?.find(bet => bet.id === 1);
-                console.log("Match winner odds:", matchWinnerOdds);
-
-                let homeWin = 'N/A';
-                let draw = 'N/A';
-                let awayWin = 'N/A';
+                const matchWinnerOdds = bet365?.bets?.find(bet => bet.id === 1);
 
                 if (matchWinnerOdds?.values) {
                     homeWin = matchWinnerOdds.values.find(v => v.value === "Home" || v.value === 1)?.odd || 'N/A';
@@ -392,54 +384,54 @@
                     draw = formatOdds(draw, currentOddsFormat);
                     awayWin = formatOdds(awayWin, currentOddsFormat);
                 }
+            }
 
-                const isLive = fixture.status?.short === 'LIVE';
-                const elapsed = fixture.status?.elapsed ?? 0;
-                const hasStarted = new Date(fixture.date) < new Date();
-
-                return `
-                    <div class='match-card ${isLive ? 'live-match' : ''} ${hasStarted ? 'started' : ''}' data-fixture-id='${fixture.id}'>
-                        <div class="match-time ${isLive ? 'live' : ''}">
-                            ${isLive ? `<span class="live-indicator">LIVE ${elapsed}'</span>` : matchTime}
-                        </div>
-
-                        <div class="team home-team">
-                            <img class="team-logo" src="${fixture.teams.home.logo}" alt="${fixture.teams.home.name}" onerror="this.src='https://via.placeholder.com/30?text=?'" />
-                            <span class="team-name">${fixture.teams.home.name}</span>
-                        </div>
-
-                        <div class="match-odds">
-                            <button class="odd-btn" onclick="placeBet(${fixture.id}, 'home', '${homeWin}')">
-                                <span class="odd-value">${homeWin}</span>
-                            </button>
-                            <button class="odd-btn" onclick="placeBet(${fixture.id}, 'draw', '${draw}')">
-                                <span class="odd-value">${draw}</span>
-                            </button>
-                            <button class="odd-btn" onclick="placeBet(${fixture.id}, 'away', '${awayWin}')">
-                                <span class="odd-value">${awayWin}</span>
-                            </button>
-                        </div>
-
-                        <div class="team away-team">
-                            <span class="team-name">${fixture.teams.away.name}</span>
-                            <img class="team-logo" src="${fixture.teams.away.logo}" alt="${fixture.teams.away.name}" onerror="this.src='https://via.placeholder.com/30?text=?'" />
-                        </div>
-
-                        <div class="match-actions">
-                            <button class="more-odds-btn" onclick="showMoreOdds(${fixture.id})">
-                                <i class="fas fa-plus"></i>
-                            </button>
-                        </div>
+            return `
+                <div class='match-card ${isLive ? 'live-match' : ''} ${hasStarted ? 'started' : ''}' data-fixture-id='${fixture.id}'>
+                    <div class="match-time ${isLive ? 'live' : ''}">
+                        ${isLive ? `<span class="live-indicator">LIVE ${fixture.status?.elapsed}'</span>` : matchTime}
                     </div>
-                `;
-            }).join("");
 
-            matchContainer.innerHTML = matchesHtml;
-            currentBets.forEach(bet => {
-            highlightSelectedOdd(bet.fixtureId, bet.type);
-        });
-        }, 500);
-    }
+                    <div class="team home-team">
+                        <img class="team-logo" src="${fixture.teams.home.logo}" alt="${fixture.teams.home.name}" onerror="this.src='https://via.placeholder.com/30?text=?'" />
+                        <span class="team-name">${fixture.teams.home.name}</span>
+                    </div>
+
+                    <div class="match-odds-or-score">
+                        ${isFinished 
+                            ? `<span class="final-score">${homeScore} - ${awayScore}</span>` 
+                            : `
+                                <div class="odds-buttons">
+                                    <button class="odd-btn" onclick="placeBet(${fixture.id}, 'home', '${homeWin}')">${homeWin}</button>
+                                    <button class="odd-btn" onclick="placeBet(${fixture.id}, 'draw', '${draw}')">${draw}</button>
+                                    <button class="odd-btn" onclick="placeBet(${fixture.id}, 'away', '${awayWin}')">${awayWin}</button>
+                                </div>
+                            `
+                        }
+                    </div>
+
+
+                    <div class="team away-team">
+                        <span class="team-name">${fixture.teams.away.name}</span>
+                        <img class="team-logo" src="${fixture.teams.away.logo}" alt="${fixture.teams.away.name}" onerror="this.src='https://via.placeholder.com/30?text=?'" />
+                    </div>
+
+                    ${!isFinished ? `
+                    <div class="match-actions">
+                        <button class="more-odds-btn" onclick="showMoreOdds(${fixture.id})">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>` : ''}
+                </div>
+            `;
+        }).join("");
+
+        matchContainer.innerHTML = matchesHtml;
+
+        currentBets.forEach(bet => highlightSelectedOdd(bet.fixtureId, bet.type));
+    }, 500);
+}
+
 
     function placeBet(fixtureId, type, odds) {
     if (!isUserLoggedIn) {
