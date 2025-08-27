@@ -13,6 +13,7 @@ namespace SportDomain.Identity
         public string? SiteName { get; set; }
         public DateTime DateOfBirth { get; set; }
         public virtual ICollection<VirtualCurrency> Currencies { get; set; } = new List<VirtualCurrency>();
+        public virtual ICollection<UserBet> Bets { get; set; } = new List<UserBet>();
         public bool HasAcceptedUserAgreement { get; set; }
     }
 }

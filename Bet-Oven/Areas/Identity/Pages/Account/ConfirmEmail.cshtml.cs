@@ -49,7 +49,7 @@ namespace Bet_Oven.Areas.Identity.Pages.Account
             userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var totalCurrency = _context.Currencies
                                      .Where(t => t.BetUserId == userId)
-                                     .Sum(t => t.currencyAmount);
+                                     .Sum(t => t.CurrencyAmount);
 
             ViewData["TotalCurrency"] = totalCurrency;
 

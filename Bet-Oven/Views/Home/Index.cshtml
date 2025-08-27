@@ -604,32 +604,6 @@
         document.getElementById('potential-win').textContent = potentialWin.toFixed(2);
     }
 
-    function placeAllBets() {
-        if (currentBets.length === 0) {
-            showToast('No bets to place', 'info');
-            return;
-        }
-
-        const stake = parseFloat(document.getElementById('total-stake').value) || 0;
-
-        if (stake <= 0) {
-            showToast('Please enter a valid stake amount', 'error');
-            return;
-        }
-
-        document.getElementById('loading-overlay').classList.remove('hidden');
-
-        setTimeout(() => {
-            document.getElementById('loading-overlay').classList.add('hidden');
-
-            showToast('Bet placed successfully!', 'success');
-
-            currentBets = [];
-            updateBetsList();
-            updatePotentialWin();
-        }, 1500);
-    }
-
     function showMoreOdds(fixtureId) {
         showToast(`More betting options for match #${fixtureId}`, 'info');
     }
@@ -645,6 +619,58 @@
             }
         }
     }
+    function placeAllBets() {
+    if (currentBets.length === 0) {
+        showToast('No bets to place', 'info');
+        return;
+    }
+
+    const stake = parseFloat(document.getElementById('total-stake').value) || 0;
+    if (stake <= 0) {
+        showToast('Enter a valid stake amount', 'error');
+        return;
+    }
+
+    document.getElementById('loading-overlay').classList.remove('hidden');
+
+    const payload = currentBets.map(bet => ({
+        HomeTeam: bet.homeTeam,
+        AwayTeam: bet.awayTeam,
+        Type: bet.type,
+        Odds: parseFloat(bet.odds),
+        FixtureId: bet.fixtureId
+    }));
+
+    fetch('/Bet/PlaceBet', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+        },
+        body: JSON.stringify({ bets: payload, totalStake: stake })
+    })
+    .then(res => res.json())
+    .then(data => {
+        document.getElementById('loading-overlay').classList.add('hidden');
+        if (data.success) {
+            showToast('Bets placed successfully!', 'success');
+            currentBets = [];
+            updateBetsList();
+            updatePotentialWin();
+
+            const balanceElem = document.getElementById('user-balance');
+            if (balanceElem) balanceElem.textContent = data.newBalance.toFixed(2);
+        } else {
+            showToast(data.message, 'error');
+        }
+    })
+    .catch(err => {
+        document.getElementById('loading-overlay').classList.add('hidden');
+        console.error(err);
+        showToast('Error placing bets', 'error');
+    });
+}
+
 
     function initSearch() {
         const searchInput = document.getElementById('league-search');

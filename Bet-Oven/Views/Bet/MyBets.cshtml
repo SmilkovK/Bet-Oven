@@ -1,0 +1,35 @@
+﻿@model IEnumerable<SportDomain.models.UserBet>
+@{
+    ViewBag.Title = "My Bets";
+}
+
+<h2>My Bets</h2>
+<p>Current Balance: $<span>@ViewBag.CurrentBalance</span></p>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Home Team</th>
+            <th>Away Team</th>
+            <th>Type</th>
+            <th>Stake</th>
+            <th>Odds</th>
+            <th>Potential Win</th>
+            <th>Placed At</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var bet in Model)
+        {
+            <tr>
+                <td>@bet.HomeTeam</td>
+                <td>@bet.AwayTeam</td>
+                <td>@bet.BetType</td>
+                <td>@bet.Stake</td>
+                <td>@bet.Odds</td>
+                <td>@bet.PotentialWin</td>
+                <td>@bet.PlacedAt.ToLocalTime()</td>
+            </tr>
+        }
+    </tbody>
+</table>

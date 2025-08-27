@@ -1,0 +1,90 @@
+﻿@model IEnumerable<SportDomain.models.VirtualCurrency>
+
+@{
+    ViewBag.Title = "Currency History";
+
+    DateTime now = DateTime.Now;
+    DateTime nextRefresh = now.Date.AddDays(1);
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/Currency.css" />
+}
+
+<h2 class="text-center">Currency History</h2>
+
+<div class="currency-form-box">
+    <h3>Add Currency</h3>
+
+    <p><strong>Current Balance:</strong> @ViewBag.CurrentBalance.ToString("F2")</p>
+
+    <div id="refresh-timer">
+        Next currency refresh in: <span id="timer">calculating...</span>
+    </div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+
+    <form asp-action="AddCurrencyFromView" method="post" class="currency-form">
+        @Html.AntiForgeryToken()
+        <div class="form-group">
+            <label for="amount">Amount</label>
+            <input type="number" step="0.01" class="form-control" id="amount" name="amount" required />
+        </div>
+        <button type="submit" class="btn btn-primary">Add</button>
+    </form>
+</div>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Date</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var transaction in Model)
+        {
+            <tr>
+                <td>@transaction.CurrencyAmount.ToString("F2")</td>
+                <td>
+                    @if (transaction.CurrencyAmount > 0)
+                    {
+                        <span class="text-success">Added (+@transaction.CurrencyAmount)</span>
+                    }
+                    else
+                    {
+                        <span class="text-danger">Deducted (@transaction.CurrencyAmount)</span>
+                    }
+                </td>
+                <td>@transaction.CreatedAt.ToLocalTime()</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<script>
+    const nextRefresh = new Date('@nextRefresh.ToString("yyyy-MM-ddTHH:mm:ss")');
+    const timerEl = document.getElementById('timer');
+
+    function updateTimer() {
+        const now = new Date();
+        let diff = nextRefresh - now;
+        if(diff < 0) diff = 0;
+
+        const hours = Math.floor(diff / 1000 / 60 / 60);
+        const minutes = Math.floor((diff / 1000 / 60) % 60);
+        const seconds = Math.floor((diff / 1000) % 60);
+
+        timerEl.innerText = `${hours}h ${minutes}m ${seconds}s`;
+    }
+
+    updateTimer();
+    setInterval(updateTimer, 1000);
+</script>

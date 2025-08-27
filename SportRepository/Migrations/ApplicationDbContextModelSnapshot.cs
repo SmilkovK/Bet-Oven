@@ -8,7 +8,7 @@ using SportRepository;
 
 #nullable disable
 
-namespace Bet_Oven.Data.Migrations
+namespace SportRepository.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
     partial class ApplicationDbContextModelSnapshot : ModelSnapshot
@@ -255,11 +255,56 @@ namespace Bet_Oven.Data.Migrations
                     b.ToTable("FavoriteLeagues");
                 });
 
+            modelBuilder.Entity("SportDomain.models.UserBet", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AwayTeam")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("BetType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("HomeTeam")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<float>("Odds")
+                        .HasColumnType("real");
+
+                    b.Property<DateTime>("PlacedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<float>("PotentialWin")
+                        .HasColumnType("real");
+
+                    b.Property<float>("Stake")
+                        .HasColumnType("real");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UserBets");
+                });
+
             modelBuilder.Entity("SportDomain.models.VirtualCurrency", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("BetUserId")
                         .HasColumnType("nvarchar(450)");
@@ -267,8 +312,11 @@ namespace Bet_Oven.Data.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<float>("currencyAmount")
+                    b.Property<float>("CurrencyAmount")
                         .HasColumnType("real");
+
+                    b.Property<bool>("IsBalanceRecord")
+                        .HasColumnType("bit");
 
                     b.HasKey("Id");
 
@@ -339,6 +387,17 @@ namespace Bet_Oven.Data.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("SportDomain.models.UserBet", b =>
+                {
+                    b.HasOne("SportDomain.Identity.BetUser", "User")
+                        .WithMany("Bets")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("SportDomain.models.VirtualCurrency", b =>
                 {
                     b.HasOne("SportDomain.Identity.BetUser", "BetUser")
@@ -351,6 +410,8 @@ namespace Bet_Oven.Data.Migrations
 
             modelBuilder.Entity("SportDomain.Identity.BetUser", b =>
                 {
+                    b.Navigation("Bets");
+
                     b.Navigation("Currencies");
                 });
 #pragma warning restore 612, 618
