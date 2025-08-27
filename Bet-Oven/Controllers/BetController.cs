@@ -33,8 +33,9 @@ namespace Bet_Oven.Controllers
                                      .ToListAsync();
 
             var balance = await _context.Currencies
-                                        .Where(c => c.BetUserId == user.Id)
-                                        .SumAsync(c => (float?)c.CurrencyAmount) ?? 0;
+                                        .Where(c => c.BetUserId == user.Id && c.IsBalanceRecord)
+                                        .Select(c => (float?)c.CurrencyAmount)
+                                        .FirstOrDefaultAsync() ?? 0;
 
             ViewBag.CurrentBalance = balance;
             return View(bets);
@@ -47,7 +48,8 @@ namespace Bet_Oven.Controllers
             if (user == null)
                 return Json(new { success = false, message = "User not found." });
 
-            var currency = await _context.Currencies.FirstOrDefaultAsync(c => c.BetUserId == user.Id);
+            var currency = await _context.Currencies
+                .FirstOrDefaultAsync(c => c.BetUserId == user.Id && c.IsBalanceRecord);
 
             if (currency == null || model.Stake > currency.CurrencyAmount)
                 return Json(new { success = false, message = "Insufficient balance." });
@@ -70,56 +72,6 @@ namespace Bet_Oven.Controllers
             await _context.SaveChangesAsync();
 
             return Json(new { success = true, newBalance = currency.CurrencyAmount });
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> AddCurrency(float amount)
-        {
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-                return Json(new { success = false, message = "User not found." });
-
-            if (amount <= 0)
-                return Json(new { success = false, message = "Invalid amount." });
-
-            var todayTotal = await _context.Currencies
-                .Where(c => c.BetUserId == user.Id && c.CreatedAt.Date == DateTime.UtcNow.Date)
-                .SumAsync(c => (float?)c.CurrencyAmount) ?? 0;
-
-            if (todayTotal + amount > 100)
-                return Json(new { success = false, message = "Daily limit of 100 credits reached." });
-
-            var balanceRecord = await _context.Currencies
-                .FirstOrDefaultAsync(c => c.BetUserId == user.Id && c.IsBalanceRecord);
-
-            if (balanceRecord == null)
-            {
-                balanceRecord = new VirtualCurrency
-                {
-                    BetUserId = user.Id,
-                    CurrencyAmount = amount,
-                    CreatedAt = DateTime.UtcNow,
-                    IsBalanceRecord = true
-                };
-                _context.Currencies.Add(balanceRecord);
-            }
-            else
-            {
-                balanceRecord.CurrencyAmount += amount;
-            }
-
-            var historyRecord = new VirtualCurrency
-            {
-                BetUserId = user.Id,
-                CurrencyAmount = amount,
-                CreatedAt = DateTime.UtcNow,
-                IsBalanceRecord = false
-            };
-            _context.Currencies.Add(historyRecord);
-
-            await _context.SaveChangesAsync();
-
-            return Json(new { success = true, newBalance = balanceRecord.CurrencyAmount });
         }
 
         [HttpPost]
@@ -146,7 +98,7 @@ namespace Bet_Oven.Controllers
             }
 
             var todayTotal = await _context.Currencies
-                .Where(c => c.BetUserId == user.Id && c.CreatedAt.Date == DateTime.UtcNow.Date)
+                .Where(c => c.BetUserId == user.Id && c.CreatedAt.Date == DateTime.UtcNow.Date && !c.IsBalanceRecord)
                 .SumAsync(c => (float?)c.CurrencyAmount) ?? 0;
 
             if (todayTotal + amount > 100)
@@ -156,14 +108,16 @@ namespace Bet_Oven.Controllers
             }
 
             var balanceRecord = await _context.Currencies
-                .FirstOrDefaultAsync(c => c.BetUserId == user.Id);
+                .FirstOrDefaultAsync(c => c.BetUserId == user.Id && c.IsBalanceRecord);
 
             if (balanceRecord == null)
             {
                 balanceRecord = new VirtualCurrency
                 {
                     BetUserId = user.Id,
-                    CurrencyAmount = amount
+                    CurrencyAmount = amount,
+                    IsBalanceRecord = true,
+                    CreatedAt = DateTime.UtcNow
                 };
                 _context.Currencies.Add(balanceRecord);
             }
@@ -176,7 +130,8 @@ namespace Bet_Oven.Controllers
             {
                 BetUserId = user.Id,
                 CurrencyAmount = amount,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                IsBalanceRecord = false
             };
             _context.Currencies.Add(historyRecord);
 
@@ -193,14 +148,16 @@ namespace Bet_Oven.Controllers
             if (user == null)
                 return RedirectToAction("Login", "Account");
 
+            var balanceRecord = await _context.Currencies
+                .Where(c => c.BetUserId == user.Id && c.IsBalanceRecord)
+                .FirstOrDefaultAsync();
+
+            var currentBalance = balanceRecord?.CurrencyAmount ?? 0;
+
             var transactions = await _context.Currencies
-                .Where(c => c.BetUserId == user.Id)
+                .Where(c => c.BetUserId == user.Id && !c.IsBalanceRecord)
                 .OrderByDescending(c => c.CreatedAt)
                 .ToListAsync();
-
-            var currentBalance = await _context.Currencies
-                .Where(c => c.BetUserId == user.Id)
-                .SumAsync(c => (float?)c.CurrencyAmount) ?? 0;
 
             ViewBag.CurrentBalance = currentBalance;
 
