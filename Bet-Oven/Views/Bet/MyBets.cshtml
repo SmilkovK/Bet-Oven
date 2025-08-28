@@ -1,35 +1,46 @@
-﻿@model IEnumerable<SportDomain.models.UserBet>
+﻿@model IEnumerable<SportDomain.models.BetConfirm>
 @{
     ViewBag.Title = "My Bets";
 }
 
-<h2>My Bets</h2>
-<p>Current Balance: $<span>@ViewBag.CurrentBalance</span></p>
+<div class="container mt-4">
+    <h2 class="mb-3">My Bets</h2>
+    <p class="fs-5">Current Balance: <strong>$@ViewBag.CurrentBalance</strong></p>
 
-<table class="table">
-    <thead>
-        <tr>
-            <th>Home Team</th>
-            <th>Away Team</th>
-            <th>Type</th>
-            <th>Stake</th>
-            <th>Odds</th>
-            <th>Potential Win</th>
-            <th>Placed At</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var bet in Model)
+    <div class="row">
+        @foreach (var betConfirm in Model.OrderByDescending(bc => bc.PlacedAt))
         {
-            <tr>
-                <td>@bet.HomeTeam</td>
-                <td>@bet.AwayTeam</td>
-                <td>@bet.BetType</td>
-                <td>@bet.Stake</td>
-                <td>@bet.Odds</td>
-                <td>@bet.PotentialWin</td>
-                <td>@bet.PlacedAt.ToLocalTime()</td>
-            </tr>
+            <div class="col-md-6 mb-4">
+                <div class="card shadow border-0 rounded-4 h-100">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">
+                            Placed at: @betConfirm.PlacedAt.ToLocalTime().ToString("g")
+                        </h5>
+
+                        @foreach (var bet in betConfirm.Bets)
+                        {
+                            <div class="mb-2 p-2 border-bottom">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>
+                                        <span class="text-primary">@bet.HomeTeam</span> 
+                                        <strong>vs</strong> 
+                                        <span class="text-danger">@bet.AwayTeam</span>
+                                    </span>
+                                    <span class="badge bg-warning text-dark">
+                                        Pending
+                                    </span>
+                                </div>
+                                <small class="d-block">
+                                    <strong>Type:</strong> @bet.BetType, 
+                                    <strong>Stake:</strong> $@bet.Stake, 
+                                    <strong>Odds:</strong> @bet.Odds, 
+                                    <strong>Potential Win:</strong> $@bet.PotentialWin
+                                </small>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
         }
-    </tbody>
-</table>
+    </div>
+</div>

@@ -27,10 +27,11 @@ namespace Bet_Oven.Controllers
             if (user == null)
                 return RedirectToAction("Login", "Account");
 
-            var bets = await _context.UserBets
-                                     .Where(b => b.UserId == user.Id)
-                                     .OrderByDescending(b => b.PlacedAt)
-                                     .ToListAsync();
+            var betConfirms = await _context.BetConfirms
+                .Where(bc => bc.UserId == user.Id)
+                .Include(bc => bc.Bets)
+                .OrderByDescending(bc => bc.PlacedAt)
+                .ToListAsync();
 
             var balance = await _context.Currencies
                                         .Where(c => c.BetUserId == user.Id && c.IsBalanceRecord)
@@ -38,11 +39,11 @@ namespace Bet_Oven.Controllers
                                         .FirstOrDefaultAsync() ?? 0;
 
             ViewBag.CurrentBalance = balance;
-            return View(bets);
+            return View(betConfirms);
         }
 
         [HttpPost]
-        public async Task<IActionResult> PlaceBet([FromBody] UserBet model)
+        public async Task<IActionResult> PlaceBet([FromBody] PlaceBet request)
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
@@ -51,24 +52,48 @@ namespace Bet_Oven.Controllers
             var currency = await _context.Currencies
                 .FirstOrDefaultAsync(c => c.BetUserId == user.Id && c.IsBalanceRecord);
 
-            if (currency == null || model.Stake > currency.CurrencyAmount)
+            if (currency == null)
+                return Json(new { success = false, message = "Balance not found." });
+
+            if (request.TotalStake > currency.CurrencyAmount)
                 return Json(new { success = false, message = "Insufficient balance." });
 
-            currency.CurrencyAmount -= model.Stake;
+            currency.CurrencyAmount -= request.TotalStake;
 
-            var bet = new UserBet
+            var lossRecord = new VirtualCurrency
+            {
+                BetUserId = user.Id,
+                CurrencyAmount = -request.TotalStake,
+                CreatedAt = DateTime.UtcNow,
+                IsBalanceRecord = false
+            };
+            _context.Currencies.Add(lossRecord);
+
+            var betConfirm = new BetConfirm
             {
                 UserId = user.Id,
-                HomeTeam = model.HomeTeam,
-                AwayTeam = model.AwayTeam,
-                BetType = model.BetType,
-                Odds = model.Odds,
-                Stake = model.Stake,
-                PotentialWin = model.Stake * model.Odds,
-                PlacedAt = DateTime.UtcNow
+                PlacedAt = DateTime.UtcNow,
+                Bets = new List<UserBet>()
             };
 
-            _context.UserBets.Add(bet);
+            var stakePerBet = request.TotalStake / request.Bets.Count;
+
+            foreach (var betDto in request.Bets)
+            {
+                betConfirm.Bets.Add(new UserBet
+                {
+                    UserId = user.Id,
+                    HomeTeam = betDto.HomeTeam,
+                    AwayTeam = betDto.AwayTeam,
+                    BetType = betDto.Type,
+                    Odds = betDto.Odds,
+                    Stake = stakePerBet,
+                    PotentialWin = stakePerBet * betDto.Odds,
+                    PlacedAt = DateTime.UtcNow
+                });
+            }
+
+            _context.BetConfirms.Add(betConfirm);
             await _context.SaveChangesAsync();
 
             return Json(new { success = true, newBalance = currency.CurrencyAmount });

@@ -13,6 +13,7 @@ namespace SportRepository
         public virtual DbSet<VirtualCurrency> Currencies { get; set; }
         public DbSet<UserBet> UserBets { get; set; }
         public virtual DbSet<FavoriteLeague> FavoriteLeagues { get; set; }
+        public DbSet<BetConfirm> BetConfirms { get; set; }
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
         {
@@ -34,8 +35,14 @@ namespace SportRepository
                 .HasForeignKey(b => b.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            modelBuilder.Entity<BetConfirm>()
+                .HasMany(bc => bc.Bets)
+                .WithOne(b => b.BetConfirm)
+                .HasForeignKey(b => b.BetConfirmId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             modelBuilder.Entity<FavoriteLeague>()
-            .HasKey(fl => fl.Id);
+                .HasKey(fl => fl.Id);
 
             modelBuilder.Entity<FavoriteLeague>()
                 .HasOne(fl => fl.User)
