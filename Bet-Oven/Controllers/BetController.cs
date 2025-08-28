@@ -69,29 +69,28 @@ namespace Bet_Oven.Controllers
             };
             _context.Currencies.Add(lossRecord);
 
+            float combinedOdds = 1;
+            foreach (var betDto in request.Bets)
+            {
+                combinedOdds *= betDto.Odds;
+            }
+
             var betConfirm = new BetConfirm
             {
                 UserId = user.Id,
                 PlacedAt = DateTime.UtcNow,
-                Bets = new List<UserBet>()
-            };
-
-            var stakePerBet = request.TotalStake / request.Bets.Count;
-
-            foreach (var betDto in request.Bets)
-            {
-                betConfirm.Bets.Add(new UserBet
+                Bets = request.Bets.Select(betDto => new UserBet
                 {
                     UserId = user.Id,
                     HomeTeam = betDto.HomeTeam,
                     AwayTeam = betDto.AwayTeam,
                     BetType = betDto.Type,
                     Odds = betDto.Odds,
-                    Stake = stakePerBet,
-                    PotentialWin = stakePerBet * betDto.Odds,
+                    Stake = request.TotalStake,
+                    PotentialWin = request.TotalStake * combinedOdds,
                     PlacedAt = DateTime.UtcNow
-                });
-            }
+                }).ToList()
+            };
 
             _context.BetConfirms.Add(betConfirm);
             await _context.SaveChangesAsync();

@@ -32,12 +32,18 @@
                                 </div>
                                 <small class="d-block">
                                     <strong>Type:</strong> @bet.BetType, 
-                                    <strong>Stake:</strong> $@bet.Stake, 
-                                    <strong>Odds:</strong> @bet.Odds, 
-                                    <strong>Potential Win:</strong> $@bet.PotentialWin
+                                    <strong>Odds:</strong> @bet.Odds
                                 </small>
                             </div>
                         }
+
+                        <!-- Display Stake and Potential Win once per BetConfirm -->
+                        <hr />
+                        <div class="d-flex justify-content-between">
+                            <strong>Stake:</strong> $@betConfirm.Bets.FirstOrDefault()?.Stake
+                            <strong>Potential Win:</strong> $@((int)betConfirm.Bets.FirstOrDefault()?.PotentialWin)
+                        </div>
+
                     </div>
                 </div>
             </div>
