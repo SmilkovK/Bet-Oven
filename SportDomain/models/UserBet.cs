@@ -25,5 +25,6 @@ namespace SportDomain.models
         public float Stake { get; set; }
         public float PotentialWin { get; set; }
         public DateTime PlacedAt { get; set; } = DateTime.UtcNow;
+        public string Status { get; set; } = "Pending";
     }
 }

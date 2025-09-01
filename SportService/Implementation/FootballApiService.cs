@@ -65,6 +65,24 @@ namespace SportService.Implementation
             return fixtures;
         }
 
+        public async Task<MatchResult> GetMatchAsync(string homeTeam, string awayTeam)
+        {
+            var fixtures = await GetTodaysFixtures();
+
+            var fixture = fixtures.FirstOrDefault(f =>
+                f.Teams.Home.Name.Equals(homeTeam, StringComparison.OrdinalIgnoreCase) &&
+                f.Teams.Away.Name.Equals(awayTeam, StringComparison.OrdinalIgnoreCase));
+
+            if (fixture == null || fixture.Goals == null)
+                return null;
+
+            return new MatchResult
+            {
+                HomeGoals = fixture.Goals.Home ?? 0,
+                AwayGoals = fixture.Goals.Away ?? 0
+            };
+        }
+
 
 
         public async Task<List<AllLeagues>> GetLeagues()

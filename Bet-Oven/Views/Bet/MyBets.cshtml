@@ -19,6 +19,9 @@
 
                         @foreach (var bet in betConfirm.Bets)
                         {
+                            var status = string.IsNullOrEmpty(bet.Status) ? "Pending" : bet.Status;
+                            var badgeClass = status == "Won" ? "bg-success" : status == "Lost" ? "bg-danger" : "bg-warning";
+
                             <div class="mb-2 p-2 border-bottom">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <span>
@@ -26,8 +29,8 @@
                                         <strong>vs</strong> 
                                         <span class="text-danger">@bet.AwayTeam</span>
                                     </span>
-                                    <span class="badge bg-warning text-dark">
-                                        Pending
+                                    <span class="badge bet-status @badgeClass">
+                                        @status
                                     </span>
                                 </div>
                                 <small class="d-block">
@@ -36,14 +39,11 @@
                                 </small>
                             </div>
                         }
-
-                        <!-- Display Stake and Potential Win once per BetConfirm -->
                         <hr />
                         <div class="d-flex justify-content-between">
                             <strong>Stake:</strong> $@betConfirm.Bets.FirstOrDefault()?.Stake
                             <strong>Potential Win:</strong> $@((int)betConfirm.Bets.FirstOrDefault()?.PotentialWin)
                         </div>
-
                     </div>
                 </div>
             </div>

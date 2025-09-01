@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using SportDomain.Identity;
 using SportDomain.models;
 using SportRepository;
+using SportService.Implementation;
 
 namespace Bet_Oven.Controllers
 {
@@ -13,11 +14,13 @@ namespace Bet_Oven.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly UserManager<BetUser> _userManager;
+        private readonly FootballApiService _footballApiService;
 
-        public BetController(ApplicationDbContext context, UserManager<BetUser> userManager)
+        public BetController(ApplicationDbContext context, UserManager<BetUser> userManager, FootballApiService footballApiService)
         {
             _context = context;
             _userManager = userManager;
+            _footballApiService = footballApiService;
         }
 
         [HttpGet]
@@ -26,6 +29,8 @@ namespace Bet_Oven.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
                 return RedirectToAction("Login", "Account");
+
+            await UpdateBetResults();
 
             var betConfirms = await _context.BetConfirms
                 .Where(bc => bc.UserId == user.Id)
@@ -41,6 +46,7 @@ namespace Bet_Oven.Controllers
             ViewBag.CurrentBalance = balance;
             return View(betConfirms);
         }
+
 
         [HttpPost]
         public async Task<IActionResult> PlaceBet([FromBody] PlaceBet request)
@@ -121,13 +127,21 @@ namespace Bet_Oven.Controllers
                 return RedirectToAction(nameof(CurrencyHistory));
             }
 
-            var todayTotal = await _context.Currencies
-                .Where(c => c.BetUserId == user.Id && c.CreatedAt.Date == DateTime.UtcNow.Date && !c.IsBalanceRecord)
+            var todayAdded = await _context.Currencies
+                .Where(c => c.BetUserId == user.Id && !c.IsBalanceRecord && c.CreatedAt.Date == DateTime.UtcNow.Date && c.CurrencyAmount > 0)
                 .SumAsync(c => (float?)c.CurrencyAmount) ?? 0;
 
-            if (todayTotal + amount > 100)
+            float remainingToday = 100 - todayAdded;
+
+            if (remainingToday <= 0)
             {
-                TempData["Error"] = "Daily limit of 100 credits reached.";
+                TempData["Error"] = $"Daily limit of 100 credits reached. You cannot add more today.";
+                return RedirectToAction(nameof(CurrencyHistory));
+            }
+
+            if (amount > remainingToday)
+            {
+                TempData["Error"] = $"Daily limit of 100 credits reached. You can add up to {remainingToday:F2} more today.";
                 return RedirectToAction(nameof(CurrencyHistory));
             }
 
@@ -161,9 +175,12 @@ namespace Bet_Oven.Controllers
 
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = $"Successfully added {amount} credits!";
+            TempData["Success"] = $"Successfully added {amount:F2} credits!";
             return RedirectToAction(nameof(CurrencyHistory));
         }
+
+
+
 
         [HttpGet]
         public async Task<IActionResult> CurrencyHistory()
@@ -186,6 +203,50 @@ namespace Bet_Oven.Controllers
             ViewBag.CurrentBalance = currentBalance;
 
             return View(transactions);
+        }
+        public async Task UpdateBetResults()
+        {
+            var pendingBets = await _context.UserBets
+                .Where(b => b.Status == "Pending")
+                .ToListAsync();
+
+            foreach (var bet in pendingBets)
+            {
+                var matchResult = await _footballApiService.GetMatchAsync(bet.HomeTeam, bet.AwayTeam);
+
+                if (matchResult == null || !matchResult.Finished)
+                    continue;
+
+                bool isWin = bet.BetType switch
+                {
+                    "home" => matchResult.HomeGoals > matchResult.AwayGoals,
+                    "away" => matchResult.AwayGoals > matchResult.HomeGoals,
+                    "draw" => matchResult.HomeGoals == matchResult.AwayGoals,
+                    _ => false
+                };
+
+                bet.Status = isWin ? "Won" : "Lost";
+
+                if (isWin)
+                {
+                    var balanceRecord = await _context.Currencies
+                        .FirstOrDefaultAsync(c => c.BetUserId == bet.UserId && c.IsBalanceRecord);
+
+                    if (balanceRecord != null)
+                    {
+                        balanceRecord.CurrencyAmount += bet.PotentialWin;
+                    }
+
+                    _context.Currencies.Add(new VirtualCurrency
+                    {
+                        BetUserId = bet.UserId,
+                        CurrencyAmount = bet.PotentialWin,
+                        CreatedAt = DateTime.UtcNow,
+                        IsBalanceRecord = false
+                    });
+                }
+            }
+            await _context.SaveChangesAsync();
         }
     }
 }
