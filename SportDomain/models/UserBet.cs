@@ -16,15 +16,22 @@ namespace SportDomain.models
         public int Id { get; set; }
         public string UserId { get; set; }
         public BetUser User { get; set; }
+        public int? FixtureId { get; set; }
         public int? BetConfirmId { get; set; }
         public BetConfirm BetConfirm { get; set; }
         public string HomeTeam { get; set; }
         public string AwayTeam { get; set; }
+        public int? HomeGoals { get; set; }
+        public int? AwayGoals { get; set; }
         public string BetType { get; set; }
         public float Odds { get; set; }
         public float Stake { get; set; }
         public float PotentialWin { get; set; }
         public DateTime PlacedAt { get; set; } = DateTime.UtcNow;
         public string Status { get; set; } = "Pending";
+        public bool IsPaid { get; set; } = false;
+        public string DisplayScore { get; set; } = "Match has not started";
+
+
     }
 }

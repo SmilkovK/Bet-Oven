@@ -16,5 +16,9 @@ namespace SportDomain.models
         public BetUser User { get; set; }
         public DateTime PlacedAt { get; set; } = DateTime.UtcNow;
         public ICollection<UserBet> Bets { get; set; }
+        public string Status { get; set; } = "Pending";
+        public bool IsPaidOut { get; set; } = false;
+        public float CombinedPotentialWin { get; set; }
+
     }
 }

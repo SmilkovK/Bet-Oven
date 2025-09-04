@@ -2,10 +2,12 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using SportDomain.DTO;
 using SportDomain.Identity;
 using SportDomain.models;
 using SportRepository;
 using SportService.Implementation;
+using System.Diagnostics;
 
 namespace Bet_Oven.Controllers
 {
@@ -30,7 +32,7 @@ namespace Bet_Oven.Controllers
             if (user == null)
                 return RedirectToAction("Login", "Account");
 
-            await UpdateBetResults();
+            await UpdateBetResults(user.Id);
 
             var betConfirms = await _context.BetConfirms
                 .Where(bc => bc.UserId == user.Id)
@@ -46,7 +48,6 @@ namespace Bet_Oven.Controllers
             ViewBag.CurrentBalance = balance;
             return View(betConfirms);
         }
-
 
         [HttpPost]
         public async Task<IActionResult> PlaceBet([FromBody] PlaceBet request)
@@ -77,14 +78,13 @@ namespace Bet_Oven.Controllers
 
             float combinedOdds = 1;
             foreach (var betDto in request.Bets)
-            {
                 combinedOdds *= betDto.Odds;
-            }
 
             var betConfirm = new BetConfirm
             {
                 UserId = user.Id,
                 PlacedAt = DateTime.UtcNow,
+                CombinedPotentialWin = request.TotalStake * combinedOdds,
                 Bets = request.Bets.Select(betDto => new UserBet
                 {
                     UserId = user.Id,
@@ -94,7 +94,8 @@ namespace Bet_Oven.Controllers
                     Odds = betDto.Odds,
                     Stake = request.TotalStake,
                     PotentialWin = request.TotalStake * combinedOdds,
-                    PlacedAt = DateTime.UtcNow
+                    PlacedAt = DateTime.UtcNow,
+                    FixtureId = betDto.FixtureId
                 }).ToList()
             };
 
@@ -103,6 +104,7 @@ namespace Bet_Oven.Controllers
 
             return Json(new { success = true, newBalance = currency.CurrencyAmount });
         }
+
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -179,9 +181,6 @@ namespace Bet_Oven.Controllers
             return RedirectToAction(nameof(CurrencyHistory));
         }
 
-
-
-
         [HttpGet]
         public async Task<IActionResult> CurrencyHistory()
         {
@@ -204,46 +203,126 @@ namespace Bet_Oven.Controllers
 
             return View(transactions);
         }
-        public async Task UpdateBetResults()
+        public async Task UpdateBetResults(string userId)
         {
-            var pendingBets = await _context.UserBets
-                .Where(b => b.Status == "Pending")
+            var betConfirms = await _context.BetConfirms
+                .Include(bc => bc.Bets)
+                .Where(bc => bc.UserId == userId)
                 .ToListAsync();
 
-            foreach (var bet in pendingBets)
+            var fixtureIds = betConfirms
+                .SelectMany(bc => bc.Bets)
+                .Where(b => b.FixtureId.HasValue)
+                .Select(b => b.FixtureId.Value)
+                .Distinct()
+                .ToList();
+
+            var liveMatches = await _footballApiService.GetLiveMatches();
+            var todayMatches = await _footballApiService.GetFixturesByDate(DateTime.UtcNow);
+
+            var fixtureLookup = liveMatches
+                .Concat(todayMatches)
+                .Where(f => fixtureIds.Contains(f.Id))
+                .ToDictionary(f => f.Id, f => f);
+
+            foreach (var confirm in betConfirms)
             {
-                var matchResult = await _footballApiService.GetMatchAsync(bet.HomeTeam, bet.AwayTeam);
+                bool allFinished = true;
+                bool allWon = true;
 
-                if (matchResult == null || !matchResult.Finished)
-                    continue;
-
-                bool isWin = bet.BetType switch
+                foreach (var bet in confirm.Bets)
                 {
-                    "home" => matchResult.HomeGoals > matchResult.AwayGoals,
-                    "away" => matchResult.AwayGoals > matchResult.HomeGoals,
-                    "draw" => matchResult.HomeGoals == matchResult.AwayGoals,
-                    _ => false
-                };
+                    if (!bet.FixtureId.HasValue) continue;
 
-                bet.Status = isWin ? "Won" : "Lost";
+                    fixtureLookup.TryGetValue(bet.FixtureId.Value, out var fixture);
+                    if (fixture == null) continue;
 
-                if (isWin)
+                    bet.HomeGoals = fixture.Goals?.Home ?? 0;
+                    bet.AwayGoals = fixture.Goals?.Away ?? 0;
+
+                    string statusShort = fixture.Status?.Short ?? "NS";
+
+                    switch (statusShort)
+                    {
+                        case "NS":
+                            bet.Status = "Pending";
+                            bet.DisplayScore = "Match has not started";
+                            allFinished = false;
+                            allWon = false;
+                            break;
+
+                        case "1H":
+                        case "2H":
+                        case "HT":
+                        case "ET":
+                            bet.Status = "Live";
+                            bet.DisplayScore = $"{bet.HomeGoals} : {bet.AwayGoals} (Live)";
+                            allFinished = false;
+                            allWon = false;
+                            break;
+
+                        case "FT":
+                        case "AET":
+                        case "PEN":
+                            bool isDraw = bet.HomeGoals == bet.AwayGoals;
+                            bool isHomeWin = bet.HomeGoals > bet.AwayGoals;
+                            bool isAwayWin = bet.AwayGoals > bet.HomeGoals;
+
+                            bet.Status = bet.BetType.ToLower() switch
+                            {
+                                "draw" => isDraw ? "Won" : "Lost",
+                                "home" => isHomeWin ? "Won" : "Lost",
+                                "away" => isAwayWin ? "Won" : "Lost",
+                                _ => "Lost"
+                            };
+
+                            bet.DisplayScore = $"{bet.HomeGoals} : {bet.AwayGoals} (Finished)";
+                            if (bet.Status == "Lost") allWon = false;
+                            break;
+
+                        default:
+                            bet.Status = "Pending";
+                            bet.DisplayScore = "Match has not started";
+                            allFinished = false;
+                            allWon = false;
+                            break;
+                    }
+                }
+
+                if (allFinished && !confirm.IsPaidOut)
                 {
                     var balanceRecord = await _context.Currencies
-                        .FirstOrDefaultAsync(c => c.BetUserId == bet.UserId && c.IsBalanceRecord);
+                        .FirstOrDefaultAsync(c => c.BetUserId == userId && c.IsBalanceRecord);
 
                     if (balanceRecord != null)
                     {
-                        balanceRecord.CurrencyAmount += bet.PotentialWin;
-                    }
+                        if (allWon)
+                        {
+                            float payout = confirm.CombinedPotentialWin;
+                            balanceRecord.CurrencyAmount += payout;
 
-                    _context.Currencies.Add(new VirtualCurrency
-                    {
-                        BetUserId = bet.UserId,
-                        CurrencyAmount = bet.PotentialWin,
-                        CreatedAt = DateTime.UtcNow,
-                        IsBalanceRecord = false
-                    });
+                            _context.Currencies.Add(new VirtualCurrency
+                            {
+                                BetUserId = userId,
+                                CurrencyAmount = payout,
+                                CreatedAt = DateTime.UtcNow,
+                                IsBalanceRecord = false
+                            });
+                            foreach (var bet in confirm.Bets)
+                                bet.IsPaid = true;
+
+                            confirm.Status = "Won";
+                        }
+                        else
+                        {
+                            confirm.Status = "Lost";
+                        }
+                        confirm.IsPaidOut = true;
+                    }
+                }
+                else if (!allFinished)
+                {
+                    confirm.Status = confirm.Bets.Any(b => b.Status == "Live") ? "Live" : "Pending";
                 }
             }
             await _context.SaveChangesAsync();

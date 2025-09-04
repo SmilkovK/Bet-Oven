@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SportRepository;
 
@@ -11,9 +12,11 @@ using SportRepository;
 namespace SportRepository.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250902123829_UserBet")]
+    partial class UserBet
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -241,18 +244,8 @@ namespace SportRepository.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<float>("CombinedPotentialWin")
-                        .HasColumnType("real");
-
-                    b.Property<bool>("IsPaidOut")
-                        .HasColumnType("bit");
-
                     b.Property<DateTime>("PlacedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("UserId")
                         .IsRequired()
@@ -306,10 +299,6 @@ namespace SportRepository.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("BetType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("DisplayScore")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 

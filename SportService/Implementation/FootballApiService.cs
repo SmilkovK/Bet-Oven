@@ -65,13 +65,22 @@ namespace SportService.Implementation
             return fixtures;
         }
 
-        public async Task<MatchResult> GetMatchAsync(string homeTeam, string awayTeam)
+        public async Task<MatchResult> GetMatchAsync(string homeTeam, string awayTeam, DateTime? date = null)
         {
-            var fixtures = await GetTodaysFixtures();
+            List<Fixture> fixtures;
+
+            if (date.HasValue)
+            {
+                fixtures = await GetFixturesByDate(date.Value);
+            }
+            else
+            {
+                fixtures = await GetTodaysFixtures();
+            }
 
             var fixture = fixtures.FirstOrDefault(f =>
-                f.Teams.Home.Name.Equals(homeTeam, StringComparison.OrdinalIgnoreCase) &&
-                f.Teams.Away.Name.Equals(awayTeam, StringComparison.OrdinalIgnoreCase));
+                string.Equals(f.Teams.Home.Name, homeTeam, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(f.Teams.Away.Name, awayTeam, StringComparison.OrdinalIgnoreCase));
 
             if (fixture == null || fixture.Goals == null)
                 return null;
@@ -79,8 +88,33 @@ namespace SportService.Implementation
             return new MatchResult
             {
                 HomeGoals = fixture.Goals.Home ?? 0,
-                AwayGoals = fixture.Goals.Away ?? 0
+                AwayGoals = fixture.Goals.Away ?? 0,
+                Finished = string.Equals(fixture.Status?.Short, "FT", StringComparison.OrdinalIgnoreCase)
             };
+        }
+        public async Task<List<Fixture>> GetFixturesByDate(DateTime date, int bookmakerId = 8)
+        {
+            string formattedDate = date.ToString("yyyy-MM-dd");
+            var response = await _httpClient.GetAsync($"{BaseUrl}fixtures?date={formattedDate}");
+            if (!response.IsSuccessStatusCode) return new List<Fixture>();
+
+            var json = await response.Content.ReadAsStringAsync();
+            var fixturesApi = JsonSerializer.Deserialize<ApiFootballResponse>(json,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            var fixtures = fixturesApi?.Response?.Select(f => new Fixture
+            {
+                Id = f.Fixture.Id,
+                Timestamp = f.Fixture.Timestamp,
+                Date = f.Fixture.Date,
+                Status = MapStatus(f.Fixture.Status),
+                League = f.League,
+                Teams = f.Teams,
+                Goals = f.Goals,
+                Popular = f.Popular
+            }).ToList() ?? new List<Fixture>();
+
+            return fixtures;
         }
 
 
@@ -219,23 +253,27 @@ namespace SportService.Implementation
 
         public async Task<Fixture> GetFixtureById(int fixtureId)
         {
+            var live = await GetLiveMatches();
+            var fixture = live.FirstOrDefault(f => f.Id == fixtureId);
+            if (fixture != null) return fixture;
+
+            var today = await GetFixturesByDate(DateTime.UtcNow);
+            fixture = today.FirstOrDefault(f => f.Id == fixtureId);
+            if (fixture != null) return fixture;
+
             var response = await _httpClient.GetAsync($"{BaseUrl}fixtures?id={fixtureId}");
             if (!response.IsSuccessStatusCode) return null;
 
             var json = await response.Content.ReadAsStringAsync();
             var apiResponse = JsonSerializer.Deserialize<ApiFootballFixturesResponse>(json,
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-            var fixture = apiResponse?.Response?.FirstOrDefault();
+            fixture = apiResponse?.Response?.FirstOrDefault();
 
             if (fixture != null && fixture.Timestamp > 0)
-            {
                 fixture.Date = DateTimeOffset.FromUnixTimeSeconds(fixture.Timestamp).UtcDateTime;
-            }
 
             return fixture;
         }
-
-
 
         public async Task<ApiStatsResponse> GetFixtureStatistics(int fixtureId)
         {

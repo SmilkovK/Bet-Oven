@@ -19,15 +19,38 @@
 
                         @foreach (var bet in betConfirm.Bets)
                         {
-                            var status = string.IsNullOrEmpty(bet.Status) ? "Pending" : bet.Status;
-                            var badgeClass = status == "Won" ? "bg-success" : status == "Lost" ? "bg-danger" : "bg-warning";
+                            string status = string.IsNullOrEmpty(bet.Status) ? "Pending" : bet.Status;
+                            string badgeClass = status switch
+                            {
+                                "Won" => "bg-success",
+                                "Lost" => "bg-danger",
+                                "Live" => "bg-info",
+                                _ => "bg-warning"
+                            };
+
+                            string matchInfo = bet.HomeGoals.HasValue && bet.AwayGoals.HasValue
+                                               ? $"{bet.HomeGoals} : {bet.AwayGoals}"
+                                               : "vs";
+
+                            string displayMessage = bet.FixtureId.HasValue switch
+                            {
+                                false => "Match info not available",
+                                _ when status == "Pending" => "Match has not started",
+                                _ when status == "Live" => $"Current Score: {matchInfo}",
+                                _ when status == "Won" || status == "Lost" => $"Final Score: {matchInfo}",
+                                _ => "Status unknown"
+                            };
 
                             <div class="mb-2 p-2 border-bottom">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <span>
                                         <span class="text-primary">@bet.HomeTeam</span> 
-                                        <strong>vs</strong> 
+                                        <strong>@matchInfo</strong>
                                         <span class="text-danger">@bet.AwayTeam</span>
+                                        @if (bet.FixtureId.HasValue)
+                                        {
+                                            <small class="text-muted"> (Fixture ID: @bet.FixtureId)</small>
+                                        }
                                     </span>
                                     <span class="badge bet-status @badgeClass">
                                         @status
@@ -36,6 +59,7 @@
                                 <small class="d-block">
                                     <strong>Type:</strong> @bet.BetType, 
                                     <strong>Odds:</strong> @bet.Odds
+                                    <span class="text-info"> - @displayMessage</span>
                                 </small>
                             </div>
                         }
