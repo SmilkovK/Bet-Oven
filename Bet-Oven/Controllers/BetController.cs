@@ -223,7 +223,8 @@ namespace Bet_Oven.Controllers
             var fixtureLookup = liveMatches
                 .Concat(todayMatches)
                 .Where(f => fixtureIds.Contains(f.Id))
-                .ToDictionary(f => f.Id, f => f);
+                .GroupBy(f => f.Id)
+                .ToDictionary(g => g.Key, g => g.First());
 
             foreach (var confirm in betConfirms)
             {
@@ -245,6 +246,7 @@ namespace Bet_Oven.Controllers
                     switch (statusShort)
                     {
                         case "NS":
+                        case "TBD":
                             bet.Status = "Pending";
                             bet.DisplayScore = "Match has not started";
                             allFinished = false;
@@ -255,6 +257,8 @@ namespace Bet_Oven.Controllers
                         case "2H":
                         case "HT":
                         case "ET":
+                        case "BT":
+                        case "LIVE":
                             bet.Status = "Live";
                             bet.DisplayScore = $"{bet.HomeGoals} : {bet.AwayGoals} (Live)";
                             allFinished = false;
@@ -308,6 +312,7 @@ namespace Bet_Oven.Controllers
                                 CreatedAt = DateTime.UtcNow,
                                 IsBalanceRecord = false
                             });
+
                             foreach (var bet in confirm.Bets)
                                 bet.IsPaid = true;
 
