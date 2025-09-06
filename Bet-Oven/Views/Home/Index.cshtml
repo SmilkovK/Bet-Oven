@@ -805,10 +805,8 @@
         });
     });
         function openLuckyModal() {
-        // Generate random bets first
         generateRandomBets();
 
-        // Show the modal
         document.getElementById('lucky-modal-overlay').classList.remove('hidden');
     }
 
@@ -817,16 +815,13 @@
     }
 
     function generateRandomBets() {
-        // Clear previous random bets
         const luckyBetsPreview = document.getElementById('lucky-bets-preview');
         luckyBetsPreview.innerHTML = '';
 
-        // Collect all available fixtures from all leagues
         const allFixtures = [];
         for (const leagueId in fixturesData) {
             if (fixturesData.hasOwnProperty(leagueId)) {
                 fixturesData[leagueId].forEach(fixture => {
-                    // Only include fixtures that haven't started and have odds
                     if (new Date(fixture.date) > new Date() && fixture.odds && fixture.odds.bookmakers && fixture.odds.bookmakers.length > 0) {
                         allFixtures.push({
                             ...fixture,
@@ -837,17 +832,14 @@
             }
         }
 
-        // Determine how many random bets to generate (1-10)
         const numBets = Math.min(Math.floor(Math.random() * 10) + 1, allFixtures.length);
         document.getElementById('random-bets-count').textContent = numBets;
 
-        // If no available fixtures, show message
         if (allFixtures.length === 0) {
             luckyBetsPreview.innerHTML = '<p class="no-bets-available">No available matches with odds at the moment.</p>';
             return;
         }
 
-        // Select random fixtures
         const selectedFixtures = [];
         const usedFixtureIds = new Set();
 
@@ -861,12 +853,10 @@
             }
         }
 
-        // For each selected fixture, choose a random bet type
         const randomBets = selectedFixtures.map(fixture => {
             const betTypes = ['home', 'draw', 'away'];
             const randomType = betTypes[Math.floor(Math.random() * betTypes.length)];
 
-            // Get the odds for the selected type
             let bet365 = fixture.odds.bookmakers.find(b => b.id === 8);
             if (!bet365 && fixture.odds.bookmakers.length > 0) {
                 bet365 = fixture.odds.bookmakers[0];
@@ -895,10 +885,8 @@
             };
         });
 
-        // Store the random bets for later use
         window.randomBets = randomBets;
 
-        // Display the random bets in the preview
         randomBets.forEach(bet => {
             const betElement = document.createElement('div');
             betElement.className = 'lucky-bet-preview';
@@ -936,40 +924,31 @@
             return;
         }
 
-        // Add each random bet to current bets
         window.randomBets.forEach(bet => {
-            // Check if this fixture already has a bet
             const existingBetIndex = currentBets.findIndex(b => b.fixtureId === bet.fixtureId);
 
             if (existingBetIndex !== -1) {
-                // Replace existing bet
                 currentBets[existingBetIndex] = {
                     ...bet,
                     id: currentBets[existingBetIndex].id
                 };
             } else {
-                // Add new bet
                 currentBets.push({
                     ...bet,
-                    id: Date.now() + Math.random() // Unique ID
+                    id: Date.now() + Math.random() 
                 });
             }
         });
 
-        // Set the stake amount
         document.getElementById('total-stake').value = stake;
 
-        // Update the UI
         updateBetsList();
         updatePotentialWin();
 
-        // Show success message
         showToast(`Added ${window.randomBets.length} random bets to your bet slip!`, 'success');
 
-        // Close the modal
         closeLuckyModal();
 
-        // Clear the random bets
         window.randomBets = null;
     }
 </script>

@@ -341,10 +341,6 @@ namespace SportService.Implementation
 
     }
 
-    public class ApiFootballOddsResponse
-    {
-        public List<OddsInfo> Response { get; set; }
-    }
 
     public class ApiFootballStandingsResponse
     {
