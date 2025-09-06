@@ -77,6 +77,29 @@
             </div>
         }
     </aside>
+    <div class="modal-overlay hidden" id="lucky-modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Feeling Lucky!</h3>
+                <button class="close-modal" onclick="closeLuckyModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body" style="overflow: auto; max-height: 60dvh">
+                <p>We've selected <span id="random-bets-count">5</span> random bets for you!</p>
+                <div class="stake-input">
+                    <label for="lucky-stake">Stake Amount:</label>
+                    <input type="number" id="lucky-stake" min="1" value="10" step="5">
+                </div>
+                <div class="selected-bets-preview" id="lucky-bets-preview">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeLuckyModal()">Cancel</button>
+                <button class="btn-primary" onclick="confirmLuckyBet()">Place Bets</button>
+            </div>
+        </div>
+    </div>
 
     <main class="matches-container">
         <div class="matches-header">
@@ -131,6 +154,9 @@
                 <i class="fas fa-trash"></i>
             </button>
         </div>
+        <button style="text-decoration: underline" onclick="openLuckyModal()">
+            Feeling lucky?
+        </button>
         <div class="bets-list" id="bets-list">
             <div class="empty-bets">
                 <i class="fas fa-ticket-alt fa-2x"></i>
@@ -778,4 +804,172 @@
             }
         });
     });
+        function openLuckyModal() {
+        // Generate random bets first
+        generateRandomBets();
+
+        // Show the modal
+        document.getElementById('lucky-modal-overlay').classList.remove('hidden');
+    }
+
+    function closeLuckyModal() {
+        document.getElementById('lucky-modal-overlay').classList.add('hidden');
+    }
+
+    function generateRandomBets() {
+        // Clear previous random bets
+        const luckyBetsPreview = document.getElementById('lucky-bets-preview');
+        luckyBetsPreview.innerHTML = '';
+
+        // Collect all available fixtures from all leagues
+        const allFixtures = [];
+        for (const leagueId in fixturesData) {
+            if (fixturesData.hasOwnProperty(leagueId)) {
+                fixturesData[leagueId].forEach(fixture => {
+                    // Only include fixtures that haven't started and have odds
+                    if (new Date(fixture.date) > new Date() && fixture.odds && fixture.odds.bookmakers && fixture.odds.bookmakers.length > 0) {
+                        allFixtures.push({
+                            ...fixture,
+                            leagueId: parseInt(leagueId)
+                        });
+                    }
+                });
+            }
+        }
+
+        // Determine how many random bets to generate (1-10)
+        const numBets = Math.min(Math.floor(Math.random() * 10) + 1, allFixtures.length);
+        document.getElementById('random-bets-count').textContent = numBets;
+
+        // If no available fixtures, show message
+        if (allFixtures.length === 0) {
+            luckyBetsPreview.innerHTML = '<p class="no-bets-available">No available matches with odds at the moment.</p>';
+            return;
+        }
+
+        // Select random fixtures
+        const selectedFixtures = [];
+        const usedFixtureIds = new Set();
+
+        while (selectedFixtures.length < numBets && usedFixtureIds.size < allFixtures.length) {
+            const randomIndex = Math.floor(Math.random() * allFixtures.length);
+            const fixture = allFixtures[randomIndex];
+
+            if (!usedFixtureIds.has(fixture.id)) {
+                selectedFixtures.push(fixture);
+                usedFixtureIds.add(fixture.id);
+            }
+        }
+
+        // For each selected fixture, choose a random bet type
+        const randomBets = selectedFixtures.map(fixture => {
+            const betTypes = ['home', 'draw', 'away'];
+            const randomType = betTypes[Math.floor(Math.random() * betTypes.length)];
+
+            // Get the odds for the selected type
+            let bet365 = fixture.odds.bookmakers.find(b => b.id === 8);
+            if (!bet365 && fixture.odds.bookmakers.length > 0) {
+                bet365 = fixture.odds.bookmakers[0];
+            }
+
+            const matchWinnerOdds = bet365?.bets?.find(bet => bet.id === 1);
+            let oddsValue = 'N/A';
+
+            if (matchWinnerOdds?.values) {
+                const valueMap = {
+                    'home': "Home",
+                    'draw': "Draw",
+                    'away': "Away"
+                };
+                oddsValue = matchWinnerOdds.values.find(v => v.value === valueMap[randomType])?.odd || 'N/A';
+            }
+
+            return {
+                fixtureId: fixture.id,
+                leagueId: fixture.leagueId,
+                homeTeam: fixture.teams.home.name,
+                awayTeam: fixture.teams.away.name,
+                type: randomType,
+                odds: oddsValue,
+                timestamp: new Date().toISOString()
+            };
+        });
+
+        // Store the random bets for later use
+        window.randomBets = randomBets;
+
+        // Display the random bets in the preview
+        randomBets.forEach(bet => {
+            const betElement = document.createElement('div');
+            betElement.className = 'lucky-bet-preview';
+
+            const betTypeText = bet.type === 'home' ? '1' : bet.type === 'draw' ? 'X' : '2';
+
+            betElement.innerHTML = `
+                <div class="lucky-bet-match">${bet.homeTeam} vs ${bet.awayTeam}</div>
+                <div class="lucky-bet-details">
+                    <span class="selected-odds">${betTypeText}</span>
+                    <span class="lucky-bet-odds">${formatOdds(bet.odds, currentOddsFormat)}</span>
+                </div>
+            `;
+
+            luckyBetsPreview.appendChild(betElement);
+        });
+    }
+
+    function confirmLuckyBet() {
+        if (!window.randomBets || window.randomBets.length === 0) {
+            showToast('No random bets to place', 'error');
+            closeLuckyModal();
+            return;
+        }
+
+        if (!isUserLoggedIn) {
+            showLoginModal();
+            closeLuckyModal();
+            return;
+        }
+
+        const stake = parseFloat(document.getElementById('lucky-stake').value) || 0;
+        if (stake <= 0) {
+            showToast('Please enter a valid stake amount', 'error');
+            return;
+        }
+
+        // Add each random bet to current bets
+        window.randomBets.forEach(bet => {
+            // Check if this fixture already has a bet
+            const existingBetIndex = currentBets.findIndex(b => b.fixtureId === bet.fixtureId);
+
+            if (existingBetIndex !== -1) {
+                // Replace existing bet
+                currentBets[existingBetIndex] = {
+                    ...bet,
+                    id: currentBets[existingBetIndex].id
+                };
+            } else {
+                // Add new bet
+                currentBets.push({
+                    ...bet,
+                    id: Date.now() + Math.random() // Unique ID
+                });
+            }
+        });
+
+        // Set the stake amount
+        document.getElementById('total-stake').value = stake;
+
+        // Update the UI
+        updateBetsList();
+        updatePotentialWin();
+
+        // Show success message
+        showToast(`Added ${window.randomBets.length} random bets to your bet slip!`, 'success');
+
+        // Close the modal
+        closeLuckyModal();
+
+        // Clear the random bets
+        window.randomBets = null;
+    }
 </script>
