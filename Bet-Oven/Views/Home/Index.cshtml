@@ -652,9 +652,14 @@
     }
 
     const stake = parseFloat(document.getElementById('total-stake').value) || 0;
-    if (stake <= 0) {
-        showToast('Enter a valid stake amount', 'error');
+    
+    if (stake < 20) {
+        showToast('Minimum bet amount is 20 credits', 'error');
         return;
+    }
+
+    if (stake > 100) {
+        showToast('Placing large bet...', 'info');
     }
 
     document.getElementById('loading-overlay').classList.remove('hidden');
@@ -696,7 +701,6 @@
         showToast('Error placing bets', 'error');
     });
 }
-
 
     function initSearch() {
         const searchInput = document.getElementById('league-search');

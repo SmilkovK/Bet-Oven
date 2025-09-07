@@ -1,0 +1,239 @@
+﻿@model SportDomain.models.RewardsViewModel
+@{
+    ViewData["Title"] = "Rewards";
+}
+
+<div class="rewards-container">
+    <h1>Your Rewards</h1>
+    
+    <div class="current-balance">
+        <h3>Current Balance: @Model.CurrentBalance.ToString("F2") credits</h3>
+        <p>Daily Currency Addition Limit: 
+            @if (Model.HasReward1)
+            {
+                <strong>@Model.Reward1DailyLimit.ToString("F0") credits</strong>
+                <span class="badge unlocked-badge">REWARD UNLOCKED</span>
+            }
+            else
+            {
+                <strong>@Model.DefaultDailyLimit.ToString("F0") credits</strong>
+            }
+        </p>
+        <p>Maximum Bet Limit: 
+            @if (Model.HasReward2)
+            {
+                <strong>No limit</strong>
+                <span class="badge unlocked-badge">REWARD UNLOCKED</span>
+            }
+            else
+            {
+                <strong>100 credits</strong>
+            }
+        </p>
+    </div>
+
+    <div class="rewards-list">
+        <div class="reward-card @(Model.HasReward1 ? "unlocked" : "locked")">
+            <div class="reward-icon">
+                <i class="fas @(Model.HasReward1 ? "fa-trophy" : "fa-lock")"></i>
+            </div>
+            <div class="reward-details">
+                <h4>Reward Level 1</h4>
+                <p>@Model.Reward1Description</p>
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress" style="width: @(Math.Min(100, (Model.CurrentBalance / Model.Reward1Threshold) * 100))%"></div>
+                    </div>
+                    <span>@Math.Min(Model.CurrentBalance, Model.Reward1Threshold).ToString("F2") / @Model.Reward1Threshold.ToString("F2")</span>
+                </div>
+            </div>
+            <div class="reward-status">
+                @if (Model.HasReward1)
+                {
+                    <span class="badge unlocked-badge">UNLOCKED</span>
+                }
+                else
+                {
+                    <span class="badge locked-badge">LOCKED</span>
+                }
+            </div>
+        </div>
+
+        <div class="reward-card @(Model.HasReward2 ? "unlocked" : "locked")">
+            <div class="reward-icon">
+                <i class="fas @(Model.HasReward2 ? "fa-crown" : "fa-lock")"></i>
+            </div>
+            <div class="reward-details">
+                <h4>Reward Level 2</h4>
+                <p>@Model.Reward2Description</p>
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress" style="width: @(Math.Min(100, (Model.CurrentBalance / Model.Reward2Threshold) * 100))%"></div>
+                    </div>
+                    <span>@Math.Min(Model.CurrentBalance, Model.Reward2Threshold).ToString("F2") / @Model.Reward2Threshold.ToString("F2")</span>
+                </div>
+            </div>
+            <div class="reward-status">
+                @if (Model.HasReward2)
+                {
+                    <span class="badge unlocked-badge">UNLOCKED</span>
+                }
+                else
+                {
+                    <span class="badge locked-badge">LOCKED</span>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="rewards-info">
+        <h4>Reward Benefits:</h4>
+        <ul>
+            <li><strong>Reward Level 1 (10,000 credits):</strong> Daily currency addition limit increases from @Model.DefaultDailyLimit to @Model.Reward1DailyLimit credits</li>
+            <li><strong>Reward Level 2 (50,000 credits):</strong> No maximum bet limit (you can bet any amount)</li>
+            <li>Rewards are automatically applied based on your current balance</li>
+            <li>Daily currency addition limit resets at midnight UTC</li>
+        </ul>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .rewards-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .current-balance {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .current-balance h3 {
+            margin-bottom: 15px;
+            font-size: 1.8rem;
+        }
+
+        .current-balance p {
+            margin: 8px 0;
+            font-size: 1.1rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .reward-card {
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .reward-card.locked {
+            opacity: 0.7;
+            background: #f8f9fa;
+        }
+
+        .reward-icon {
+            font-size: 2rem;
+            margin-right: 20px;
+            color: #6c757d;
+        }
+
+        .reward-card.unlocked .reward-icon {
+            color: #28a745;
+        }
+
+        .reward-details {
+            flex: 1;
+        }
+
+        .reward-details h4 {
+            margin: 0 0 8px 0;
+            color: #333;
+        }
+
+        .reward-details p {
+            margin: 0 0 12px 0;
+            color: #666;
+        }
+
+        .progress-container {
+            margin-top: 10px;
+        }
+
+        .progress-container span {
+            font-size: 0.9rem;
+            color: #666;
+            display: block;
+            margin-top: 5px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress {
+            height: 100%;
+            background: linear-gradient(90deg, #007bff, #0056b3);
+            transition: width 0.3s ease;
+        }
+
+        .badge {
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 0.8rem;
+        }
+
+        .unlocked-badge {
+            background: #28a745;
+            color: white;
+        }
+
+        .locked-badge {
+            background: #6c757d;
+            color: white;
+        }
+
+        .reward-status {
+            margin-left: 15px;
+        }
+
+        .rewards-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 30px;
+        }
+
+        .rewards-info h4 {
+            margin: 0 0 15px 0;
+            color: #333;
+        }
+
+        .rewards-info ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        .rewards-info li {
+            margin-bottom: 8px;
+            line-height: 1.5;
+            color: #555;
+        }
+    </style>
+}

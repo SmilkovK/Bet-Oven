@@ -17,6 +17,12 @@ namespace Bet_Oven.Controllers
         private readonly ApplicationDbContext _context;
         private readonly UserManager<BetUser> _userManager;
         private readonly FootballApiService _footballApiService;
+        private const float MIN_BET_AMOUNT = 20f;
+        private const float MAX_BET_AMOUNT = 100f;
+        private const float REWARD_1_THRESHOLD = 10000f;
+        private const float REWARD_1_DAILY_LIMIT = 1000f;
+        private const float REWARD_2_THRESHOLD = 50000f;
+        private const float DEFAULT_DAILY_LIMIT = 100f;
 
         public BetController(ApplicationDbContext context, UserManager<BetUser> userManager, FootballApiService footballApiService)
         {
@@ -55,6 +61,21 @@ namespace Bet_Oven.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
                 return Json(new { success = false, message = "User not found." });
+
+            if (request.TotalStake < MIN_BET_AMOUNT)
+                return Json(new { success = false, message = $"Minimum bet amount is {MIN_BET_AMOUNT}." });
+
+            var balanceRecord = await _context.Currencies
+                .FirstOrDefaultAsync(c => c.BetUserId == user.Id && c.IsBalanceRecord);
+
+            var maxBetAmount = MAX_BET_AMOUNT;
+            if (balanceRecord != null && balanceRecord.CurrencyAmount >= REWARD_2_THRESHOLD)
+            {
+                maxBetAmount = float.MaxValue;
+            }
+
+            if (request.TotalStake > maxBetAmount)
+                return Json(new { success = false, message = $"Maximum bet amount is {maxBetAmount}." });
 
             var currency = await _context.Currencies
                 .FirstOrDefaultAsync(c => c.BetUserId == user.Id && c.IsBalanceRecord);
@@ -123,9 +144,18 @@ namespace Bet_Oven.Controllers
                 return RedirectToAction(nameof(CurrencyHistory));
             }
 
-            if (amount > 100)
+            var balanceRecord = await _context.Currencies
+                .FirstOrDefaultAsync(c => c.BetUserId == user.Id && c.IsBalanceRecord);
+
+            var dailyLimit = DEFAULT_DAILY_LIMIT;
+            if (balanceRecord != null && balanceRecord.CurrencyAmount >= REWARD_1_THRESHOLD)
             {
-                TempData["Error"] = "Max 100 per request.";
+                dailyLimit = REWARD_1_DAILY_LIMIT;
+            }
+
+            if (amount > dailyLimit)
+            {
+                TempData["Error"] = $"Max {dailyLimit} per request.";
                 return RedirectToAction(nameof(CurrencyHistory));
             }
 
@@ -133,22 +163,19 @@ namespace Bet_Oven.Controllers
                 .Where(c => c.BetUserId == user.Id && !c.IsBalanceRecord && c.CreatedAt.Date == DateTime.UtcNow.Date && c.CurrencyAmount > 0)
                 .SumAsync(c => (float?)c.CurrencyAmount) ?? 0;
 
-            float remainingToday = 100 - todayAdded;
+            float remainingToday = dailyLimit - todayAdded;
 
             if (remainingToday <= 0)
             {
-                TempData["Error"] = $"Daily limit of 100 credits reached. You cannot add more today.";
+                TempData["Error"] = $"Daily limit of {dailyLimit} credits reached. You cannot add more today.";
                 return RedirectToAction(nameof(CurrencyHistory));
             }
 
             if (amount > remainingToday)
             {
-                TempData["Error"] = $"Daily limit of 100 credits reached. You can add up to {remainingToday:F2} more today.";
+                TempData["Error"] = $"Daily limit of {dailyLimit} credits reached. You can add up to {remainingToday:F2} more today.";
                 return RedirectToAction(nameof(CurrencyHistory));
             }
-
-            var balanceRecord = await _context.Currencies
-                .FirstOrDefaultAsync(c => c.BetUserId == user.Id && c.IsBalanceRecord);
 
             if (balanceRecord == null)
             {
@@ -203,30 +230,48 @@ namespace Bet_Oven.Controllers
 
             return View(transactions);
         }
+
         public async Task UpdateBetResults(string userId)
         {
-            var betConfirms = await _context.BetConfirms
+            var unfinishedBets = await _context.BetConfirms
                 .Include(bc => bc.Bets)
-                .Where(bc => bc.UserId == userId)
+                .Where(bc => bc.UserId == userId && !bc.IsPaidOut)
                 .ToListAsync();
 
-            var fixtureIds = betConfirms
+            if (!unfinishedBets.Any())
+                return;
+
+            var fixtureIds = unfinishedBets
                 .SelectMany(bc => bc.Bets)
                 .Where(b => b.FixtureId.HasValue)
                 .Select(b => b.FixtureId.Value)
                 .Distinct()
                 .ToList();
 
-            var liveMatches = await _footballApiService.GetLiveMatches();
-            var todayMatches = await _footballApiService.GetFixturesByDate(DateTime.UtcNow);
+            if (!fixtureIds.Any())
+                return;
 
-            var fixtureLookup = liveMatches
-                .Concat(todayMatches)
-                .Where(f => fixtureIds.Contains(f.Id))
-                .GroupBy(f => f.Id)
-                .ToDictionary(g => g.Key, g => g.First());
+            List<Fixture> relevantMatches = new List<Fixture>();
 
-            foreach (var confirm in betConfirms)
+            try
+            {
+                var todayMatches = await _footballApiService.GetFixturesByDate(DateTime.UtcNow);
+                var yesterdayMatches = await _footballApiService.GetFixturesByDate(DateTime.UtcNow.AddDays(-1));
+
+                relevantMatches = todayMatches.Concat(yesterdayMatches)
+                                             .Where(f => fixtureIds.Contains(f.Id))
+                                             .ToList();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"API Error: {ex.Message}");
+                return;
+            }
+
+            var fixtureLookup = relevantMatches.ToDictionary(f => f.Id, f => f);
+            bool changesMade = false;
+
+            foreach (var confirm in unfinishedBets)
             {
                 bool allFinished = true;
                 bool allWon = true;
@@ -235,8 +280,16 @@ namespace Bet_Oven.Controllers
                 {
                     if (!bet.FixtureId.HasValue) continue;
 
-                    fixtureLookup.TryGetValue(bet.FixtureId.Value, out var fixture);
-                    if (fixture == null) continue;
+                    if (!fixtureLookup.TryGetValue(bet.FixtureId.Value, out var fixture))
+                    {
+                        if (bet.PlacedAt < DateTime.UtcNow.AddHours(-4))
+                        {
+                            bet.Status = "Finished (Unknown)";
+                            bet.DisplayScore = "Match data not available";
+                            changesMade = true;
+                        }
+                        continue;
+                    }
 
                     bet.HomeGoals = fixture.Goals?.Home ?? 0;
                     bet.AwayGoals = fixture.Goals?.Away ?? 0;
@@ -282,11 +335,24 @@ namespace Bet_Oven.Controllers
 
                             bet.DisplayScore = $"{bet.HomeGoals} : {bet.AwayGoals} (Finished)";
                             if (bet.Status == "Lost") allWon = false;
+                            changesMade = true;
+                            break;
+
+                        case "PST":
+                        case "CANC":
+                        case "ABD":
+                        case "AWD":
+                        case "WO":
+                            bet.Status = "Cancelled";
+                            bet.DisplayScore = "Match was cancelled";
+                            allFinished = true;
+                            allWon = false;
+                            changesMade = true;
                             break;
 
                         default:
                             bet.Status = "Pending";
-                            bet.DisplayScore = "Match has not started";
+                            bet.DisplayScore = "Match status unknown";
                             allFinished = false;
                             allWon = false;
                             break;
@@ -323,14 +389,24 @@ namespace Bet_Oven.Controllers
                             confirm.Status = "Lost";
                         }
                         confirm.IsPaidOut = true;
+                        changesMade = true;
                     }
                 }
                 else if (!allFinished)
                 {
-                    confirm.Status = confirm.Bets.Any(b => b.Status == "Live") ? "Live" : "Pending";
+                    var newStatus = confirm.Bets.Any(b => b.Status == "Live") ? "Live" : "Pending";
+                    if (confirm.Status != newStatus)
+                    {
+                        confirm.Status = newStatus;
+                        changesMade = true;
+                    }
                 }
             }
-            await _context.SaveChangesAsync();
+
+            if (changesMade)
+            {
+                await _context.SaveChangesAsync();
+            }
         }
     }
 }
