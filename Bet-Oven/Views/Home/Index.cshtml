@@ -81,8 +81,9 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Feeling Lucky!</h3>
-                <button class="close-modal" onclick="closeLuckyModal()">
-                    <i class="fas fa-times"></i>
+                <button class="feeling-lucky-btn" onclick="openLuckyModal()">
+                    <i class="fas fa-clover"></i>
+                    Refresh Bets
                 </button>
             </div>
             <div class="modal-body" style="overflow: auto; max-height: 60dvh">
@@ -154,8 +155,9 @@
                 <i class="fas fa-trash"></i>
             </button>
         </div>
-        <button style="text-decoration: underline" onclick="openLuckyModal()">
-            Feeling lucky?
+        <button class="feeling-lucky-btn" onclick="openLuckyModal()">
+            <i class="fas fa-clover"></i>
+            Feeling Lucky?
         </button>
         <div class="bets-list" id="bets-list">
             <div class="empty-bets">

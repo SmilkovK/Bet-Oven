@@ -1,25 +1,30 @@
-﻿using System;
+﻿using Microsoft.Extensions.Configuration;
+using SportDomain.DTO;
+using SportDomain.models;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
-using SportDomain.DTO;
-using SportDomain.models;
 
 namespace SportService.Implementation
 {
     public class FootballApiService
     {
         private readonly HttpClient _httpClient;
-        private const string BaseUrl = "https://v3.football.api-sports.io/";
-        private const string ApiKey = "f5728cad0c3c3537e7ffcb5255b0191e";
+        private readonly string BaseUrl;
+        private readonly string _apiKey;
 
-        public FootballApiService(HttpClient httpClient)
+        public FootballApiService(HttpClient httpClient, IConfiguration config)
         {
             _httpClient = httpClient;
-            _httpClient.DefaultRequestHeaders.Add("x-apisports-key", ApiKey);
+
+            BaseUrl = config["FootballApi:BaseUrl"];
+            _apiKey = config["FootballApi:ApiKey"];
+
+            _httpClient.DefaultRequestHeaders.Add("x-apisports-key", _apiKey);
         }
 
         private MatchStatus MapStatus(ApiStatus apiStatus)
@@ -65,33 +70,6 @@ namespace SportService.Implementation
             return fixtures;
         }
 
-        public async Task<MatchResult> GetMatchAsync(string homeTeam, string awayTeam, DateTime? date = null)
-        {
-            List<Fixture> fixtures;
-
-            if (date.HasValue)
-            {
-                fixtures = await GetFixturesByDate(date.Value);
-            }
-            else
-            {
-                fixtures = await GetTodaysFixtures();
-            }
-
-            var fixture = fixtures.FirstOrDefault(f =>
-                string.Equals(f.Teams.Home.Name, homeTeam, StringComparison.OrdinalIgnoreCase) &&
-                string.Equals(f.Teams.Away.Name, awayTeam, StringComparison.OrdinalIgnoreCase));
-
-            if (fixture == null || fixture.Goals == null)
-                return null;
-
-            return new MatchResult
-            {
-                HomeGoals = fixture.Goals.Home ?? 0,
-                AwayGoals = fixture.Goals.Away ?? 0,
-                Finished = string.Equals(fixture.Status?.Short, "FT", StringComparison.OrdinalIgnoreCase)
-            };
-        }
         public async Task<List<Fixture>> GetFixturesByDate(DateTime date, int bookmakerId = 8)
         {
             string formattedDate = date.ToString("yyyy-MM-dd");
