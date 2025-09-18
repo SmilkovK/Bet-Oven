@@ -39,14 +39,14 @@ namespace Bet_Oven.Controllers
         public async Task<IActionResult> Index()
         {
             var user = await _userManager.GetUserAsync(User);
-            var favoriteLeagues = new List<int>();
+            var favoriteLeagues = new HashSet<int>();
 
             if (user != null)
             {
-                favoriteLeagues = await _context.FavoriteLeagues
+                favoriteLeagues = new HashSet<int>(await _context.FavoriteLeagues
                     .Where(f => f.UserId == user.Id)
                     .Select(f => f.LeagueId)
-                    .ToListAsync();
+                    .ToListAsync());
             }
 
             var fixtures = await _footballService.GetTodaysFixtures();
@@ -73,7 +73,8 @@ namespace Bet_Oven.Controllers
             var model = new LeagueMatchesViewModel
             {
                 Leagues = leagues,
-                FixturesGroupedByLeague = fixturesGroupedByLeague
+                FixturesGroupedByLeague = fixturesGroupedByLeague,
+                FavoriteLeagues = favoriteLeagues
             };
 
             return View(model);

@@ -286,70 +286,95 @@
         document.getElementById("favorite-modal-overlay").classList.remove("hidden");
     }
 
-    function confirmFavorite(confirmed) {
+        function confirmFavorite(confirmed) {
         if (!confirmed || pendingFavoriteAction === null) {
             closeModal();
             return;
         }
 
-        const leagueCard = document.querySelector(`.league-card[data-league-id="${pendingFavoriteAction}"]`);
+        const leagueId = parseInt(pendingFavoriteAction);
+        const leagueCard = document.querySelector(`.league-card[data-league-id="${leagueId}"]`);
         const leagueName = leagueCard.getAttribute('data-league-name');
-        const isFavorite = favoriteLeagues.includes(pendingFavoriteAction);
+        const isFavorite = favoriteLeagues.includes(leagueId);
 
         document.getElementById('loading-overlay').classList.remove('hidden');
 
-        fetch(`/ToggleFavorite?leagueId=${pendingFavoriteAction}`, {
+        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+        fetch(`/ToggleFavorite?leagueId=${leagueId}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                'RequestVerificationToken': token,
+                'X-Requested-With': 'XMLHttpRequest'
             }
         })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                document.getElementById('loading-overlay').classList.add('hidden');
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            document.getElementById('loading-overlay').classList.add('hidden');
 
-                if (data.success) {
-                    favoriteLeagues = data.favoriteLeagues;
-
-                    let starIcon = document.querySelector(`.league-card[data-league-id="${pendingFavoriteAction}"] .favorite-btn`);
-                    let leagueCard = document.querySelector(`.league-card[data-league-id="${pendingFavoriteAction}"]`);
-
-                    if (starIcon && leagueCard) {
-                        starIcon.classList.toggle("active", favoriteLeagues.includes(pendingFavoriteAction));
-                        leagueCard.classList.toggle("is-favorite", favoriteLeagues.includes(pendingFavoriteAction));
-
-                        starIcon.setAttribute('title', favoriteLeagues.includes(pendingFavoriteAction) ?
-                            'Remove from favorites' : 'Add to favorites');
-                    }
-
-                    showToast(
-                        isFavorite ?
-                            `${leagueName} removed from favorites` :
-                            `${leagueName} added to favorites`,
-                        'success'
-                    );
-
-                    const showFavoritesOnly = document.getElementById('show-favorites-only').classList.contains('active');
-                    if (showFavoritesOnly && !favoriteLeagues.includes(pendingFavoriteAction)) {
-                        leagueCard.classList.add('hidden');
-                    }
+            if (data.success) {
+                if (isFavorite) {
+                    favoriteLeagues = favoriteLeagues.filter(id => id !== leagueId);
                 } else {
-                    showToast('Failed to update favorites', 'error');
+                    favoriteLeagues.push(leagueId);
                 }
-            })
-            .catch(error => {
-                document.getElementById('loading-overlay').classList.add('hidden');
-                console.error('Error toggling favorite:', error);
+
+                const starIcon = document.querySelector(`.league-card[data-league-id="${leagueId}"] .favorite-btn`);
+                const leagueCard = document.querySelector(`.league-card[data-league-id="${leagueId}"]`);
+
+                if (starIcon && leagueCard) {
+                    starIcon.classList.toggle("active", !isFavorite);
+                    leagueCard.classList.toggle("is-favorite", !isFavorite);
+                    starIcon.setAttribute('title', !isFavorite ? 'Remove from favorites' : 'Add to favorites');
+                }
+
+                sortLeaguesByFavorites();
+
+                showToast(
+                    !isFavorite ?
+                        `${leagueName} added to favorites` :
+                        `${leagueName} removed from favorites`,
+                    'success'
+                );
+            } else {
                 showToast('Failed to update favorites', 'error');
-            });
+            }
+        })
+        .catch(error => {
+            document.getElementById('loading-overlay').classList.add('hidden');
+            console.error('Error toggling favorite:', error);
+            showToast('Failed to update favorites', 'error');
+        });
 
         closeModal();
+    }
+
+    function sortLeaguesByFavorites() {
+        const leaguesList = document.getElementById('leagues-list');
+        const leagueCards = Array.from(leaguesList.querySelectorAll('.league-card'));
+
+        leagueCards.sort((a, b) => {
+            const aId = parseInt(a.getAttribute('data-league-id'));
+            const bId = parseInt(b.getAttribute('data-league-id'));
+
+            const aIsFavorite = favoriteLeagues.includes(aId);
+            const bIsFavorite = favoriteLeagues.includes(bId);
+
+            if (aIsFavorite && !bIsFavorite) return -1;
+            if (!aIsFavorite && bIsFavorite) return 1;
+
+            const aName = a.getAttribute('data-league-name').toLowerCase();
+            const bName = b.getAttribute('data-league-name').toLowerCase();
+            return aName.localeCompare(bName);
+        });
+
+        leagueCards.forEach(card => leaguesList.appendChild(card));
     }
 
     function showMatches(leagueId, leagueName) {
@@ -636,7 +661,13 @@
         showToast(`More betting options for match #${fixtureId}`, 'info');
     }
 
-    function autoSelectFirstFavoriteLeague() {
+        function autoSelectFirstLeague() {
+        const leagueCards = document.querySelectorAll('.league-card');
+
+        if (leagueCards.length === 0) {
+            return;
+        }
+
         if (favoriteLeagues.length > 0) {
             const firstFavoriteLeagueId = favoriteLeagues[0];
             const firstFavoriteLeagueCard = document.querySelector(`.league-card[data-league-id="${firstFavoriteLeagueId}"]`);
@@ -644,8 +675,15 @@
             if (firstFavoriteLeagueCard) {
                 const leagueName = firstFavoriteLeagueCard.getAttribute('data-league-name');
                 showMatches(firstFavoriteLeagueId, leagueName);
+                return;
             }
         }
+
+        const firstLeagueCard = leagueCards[0];
+        const firstLeagueId = parseInt(firstLeagueCard.getAttribute('data-league-id'));
+        const firstLeagueName = firstLeagueCard.getAttribute('data-league-name');
+
+        showMatches(firstLeagueId, firstLeagueName);
     }
     function placeAllBets() {
     if (currentBets.length === 0) {
@@ -772,7 +810,7 @@
         currentOddsFormat = 'decimal';
 
         initSearch();
-        autoSelectFirstFavoriteLeague();
+        autoSelectFirstLeague();
 
         document.getElementById('clear-all-bets')?.addEventListener('click', clearAllBets);
         document.getElementById('total-stake')?.addEventListener('input', updatePotentialWin);
